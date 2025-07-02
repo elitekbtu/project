@@ -120,13 +120,13 @@ cp nginx/nginx-temp.conf nginx/nginx.conf
 echo "🚀 Запускаем nginx с HTTP для получения сертификата..."
 
 # Запускаем все сервисы
-docker-compose up -d
+docker compose up -d
 
 echo "⏳ Ждем 10 секунд для запуска nginx..."
 sleep 10
 
 echo "📜 Получаем SSL сертификат..."
-docker-compose run --rm certbot
+docker compose run --rm certbot
 
 if [ $? -eq 0 ]; then
     echo "✅ SSL сертификат успешно получен!"
@@ -136,7 +136,7 @@ if [ $? -eq 0 ]; then
     cp nginx/nginx.conf.backup nginx/nginx.conf
     
     echo "🔄 Перезапускаем nginx с SSL поддержкой..."
-    docker-compose restart nginx
+    docker compose restart nginx
     
     echo ""
     echo "🎉 HTTPS настроен! Ваш сайт доступен по адресу:"
@@ -156,7 +156,7 @@ else
     # Восстанавливаем оригинальную конфигурацию в случае ошибки
     if [ -f nginx/nginx.conf.backup ]; then
         cp nginx/nginx.conf.backup nginx/nginx.conf
-        docker-compose restart nginx
+        docker compose restart nginx
     fi
     exit 1
 fi 
