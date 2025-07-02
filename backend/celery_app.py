@@ -28,3 +28,6 @@ celery.conf.update(
     worker_concurrency=int(os.getenv("CELERY_CONCURRENCY", os.cpu_count() or 2)),
     broker_pool_limit=int(os.getenv("CELERY_BROKER_POOL_LIMIT", 10)),
 )
+
+# Alias for backward compatibility
+celery_app = celery

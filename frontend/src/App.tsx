@@ -25,6 +25,7 @@ import AdminDashboard from './components/Admin/AdminDashboard'
 import UsersAdmin from './components/Admin/UsersAdmin'
 import ItemsAdmin from './components/Admin/ItemsAdmin'
 import OutfitsAdmin from './components/Admin/OutfitsAdmin'
+import LamodaParser from './components/Admin/LamodaParser'
 import UserForm from './components/Admin/UserForm'
 import ItemForm from './components/Admin/ItemForm'
 import OutfitForm from './components/Admin/OutfitForm'
@@ -73,6 +74,7 @@ function App() {
                 <Route path="/admin/outfits" element={<OutfitsAdmin />} />
                 <Route path="/admin/outfits/new" element={<OutfitForm />} />
                 <Route path="/admin/outfits/:id/edit" element={<OutfitForm />} />
+                <Route path="/admin/parser" element={<LamodaParser />} />
               </Route>
             </Route>
             {/* Fallback */}

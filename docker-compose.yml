@@ -28,6 +28,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_POOL_LIMIT=10
       - CELERY_CONCURRENCY=2
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health || exit 1"]
       interval: 10s
@@ -56,6 +57,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_POOL_LIMIT=10
       - CELERY_CONCURRENCY=2
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -98,9 +100,12 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     environment:
-      - RABBITMQ_VM_MEMORY_HIGH_WATERMARK=0.4
-      - RABBITMQ_MEMORY_HIGH_WATERMARK_TYPE=relative
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_VHOST=/
     healthcheck:
       test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
 
@@ -109,9 +114,12 @@ services:
     command: alembic upgrade head
     env_file:
       - .env
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   postgres_data:
+  rabbitmq_data:

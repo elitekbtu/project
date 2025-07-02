@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { Users, Shirt, Layers, ChevronRight } from 'lucide-react'
+import { Users, Shirt, Layers, ChevronRight, Download } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 const AdminDashboard = () => {
@@ -22,6 +22,11 @@ const AdminDashboard = () => {
       path: '/admin/outfits',
       label: 'Образы',
       icon: <Layers className="h-4 w-4" />
+    },
+    {
+      path: '/admin/parser',
+      label: 'Парсер Lamoda',
+      icon: <Download className="h-4 w-4" />
     }
   ]
 
