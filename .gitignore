@@ -1,2 +1,7 @@
 node_modules/
 .env
+certbot/
+.ssl_attempt_timestamp
+nginx/nginx.conf.backup
+nginx/nginx-simple.conf
+nginx/nginx-temp.conf

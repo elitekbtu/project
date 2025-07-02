@@ -25,8 +25,8 @@ if [ -z "$email" ]; then
     exit 1
 fi
 
-# Обновляем docker-compose.yml с правильным email
-sed -i "s/your-email@example.com/$email/g" docker-compose.yml
+# Устанавливаем переменную окружения для docker-compose
+export LETSENCRYPT_EMAIL="$email"
 
 echo "🚀 Настраиваем временную HTTP конфигурацию nginx..."
 
@@ -150,13 +150,19 @@ if [ $? -eq 0 ]; then
     rm -f nginx/nginx-temp.conf
 else
     echo "❌ Ошибка при получении SSL сертификата!"
-    echo "   Проверьте, что домен указывает на этот сервер"
-    echo "   и что порт 80 открыт"
+    echo "   Возможные причины:"
+    echo "   - Домен не указывает на этот сервер"
+    echo "   - Порт 80 закрыт"
+    echo "   - Rate limiting Let's Encrypt"
+    echo "   - Проблемы с DNS"
     
     # Восстанавливаем оригинальную конфигурацию в случае ошибки
     if [ -f nginx/nginx.conf.backup ]; then
         cp nginx/nginx.conf.backup nginx/nginx.conf
         docker compose restart nginx
     fi
+    
+    echo "🧹 Очищаем временные файлы..."
+    rm -f nginx/nginx-temp.conf
     exit 1
 fi 

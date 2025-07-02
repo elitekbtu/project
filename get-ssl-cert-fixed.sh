@@ -25,23 +25,30 @@ if [ -z "$email" ]; then
     exit 1
 fi
 
-# Проверяем rate limiting
-echo "🔍 Проверяем rate limiting Let's Encrypt..."
-current_time=$(date +%s)
-rate_limit_time=$(date -d "2025-07-02 11:19:00 UTC" +%s)
-
-if [ $current_time -lt $rate_limit_time ]; then
-    echo "⏰ Rate limit активен до $(date -d "2025-07-02 11:19:00 UTC")"
-    echo "   Нужно подождать $(( (rate_limit_time - current_time) / 60 )) минут"
-    read -p "❓ Продолжить несмотря на rate limit? (y/N): " continue_anyway
-    if [[ ! "$continue_anyway" =~ ^[Yy]$ ]]; then
-        echo "⏸️  Прерываем выполнение. Запустите скрипт позже."
-        exit 1
+# Проверяем предыдущие попытки получения сертификата
+echo "🔍 Проверяем предыдущие попытки получения сертификата..."
+if [ -f ".ssl_attempt_timestamp" ]; then
+    last_attempt=$(cat .ssl_attempt_timestamp)
+    current_time=$(date +%s)
+    time_diff=$((current_time - last_attempt))
+    
+    # Let's Encrypt rate limit: 5 неудачных попыток в час
+    if [ $time_diff -lt 3600 ]; then
+        echo "⏰ Последняя попытка была $(($time_diff / 60)) минут назад"
+        echo "   Рекомендуется подождать $((60 - time_diff / 60)) минут до повторной попытки"
+        read -p "❓ Продолжить несмотря на возможный rate limit? (y/N): " continue_anyway
+        if [[ ! "$continue_anyway" =~ ^[Yy]$ ]]; then
+            echo "⏸️  Прерываем выполнение. Запустите скрипт позже."
+            exit 1
+        fi
     fi
 fi
 
-# Обновляем docker-compose.yml с правильным email
-sed -i "s/turarbeks@bk.ru/$email/g" docker-compose.yml
+# Сохраняем временную метку попытки
+echo $(date +%s) > .ssl_attempt_timestamp
+
+# Устанавливаем переменную окружения для docker-compose
+export LETSENCRYPT_EMAIL="$email"
 
 echo "🧹 Очищаем старые данные..."
 rm -rf certbot/conf/*
@@ -121,17 +128,22 @@ if [ $? -eq 0 ]; then
     echo ""
     echo "🧹 Удаляем временные файлы..."
     rm -f nginx/nginx-simple.conf
+    rm -f .ssl_attempt_timestamp
 else
     echo "❌ Ошибка при получении SSL сертификата!"
     echo "   Возможные причины:"
     echo "   - Rate limiting (нужно подождать)"
     echo "   - Домен не указывает на этот сервер"
     echo "   - Порт 80 закрыт"
+    echo "   - Проблемы с DNS"
     
     # Восстанавливаем оригинальную конфигурацию в случае ошибки
     if [ -f nginx/nginx.conf.backup ]; then
         cp nginx/nginx.conf.backup nginx/nginx.conf
         docker compose restart nginx
     fi
+    
+    echo "🧹 Очищаем временные файлы..."
+    rm -f nginx/nginx-simple.conf
     exit 1
 fi 
