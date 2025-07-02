@@ -6,7 +6,7 @@ echo "🧪 Тестирование SSL через staging сервер Let's En
 echo "   (staging сертификаты не будут работать в браузере, но позволят протестировать процесс)"
 
 # Создаем необходимые директории
-mkdir -p certbot/conf
+mkdir -p certs
 mkdir -p certbot/www
 
 # Проверяем DNS
@@ -61,7 +61,7 @@ sleep 10
 # Тестируем staging сертификат
 echo "🧪 Получаем staging сертификат..."
 docker run --rm \
-  -v $(pwd)/certbot/conf:/etc/letsencrypt \
+  -v $(pwd)/certs:/etc/letsencrypt \
   -v $(pwd)/certbot/www:/var/www/certbot \
   certbot/certbot:latest \
   certonly \
