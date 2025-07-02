@@ -7,7 +7,7 @@ from pydantic import BaseSettings, Field, validator
 class Settings(BaseSettings):
 
     PROJECT_NAME: str = "TRC Backend"
-    BACKEND_CORS_ORIGINS: List[str] = ["http://164.90.225.127:8000", "164.90.225.127", "http://localhost"]
+    BACKEND_CORS_ORIGINS: List[str] = ["http://164.90.225.127", "http://localhost"]
 
     DATABASE_URL: str = Field("postgresql://postgres:postgres@db:5432/trcapp", env="DATABASE_URL")
     REDIS_URL: str = Field("redis://redis:6379/0", env="REDIS_URL")
