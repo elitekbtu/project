@@ -176,6 +176,8 @@ const CreateOutfit = () => {
         const selList = selectedByCat[c.key] || []
         if (selList.length > 0) {
           (payload as any)[idFieldMap[c.key]] = selList.map((it) => it.id)
+        } else {
+          (payload as any)[idFieldMap[c.key]] = []
         }
       })
       const newOutfit = await createOutfit(payload as any)
