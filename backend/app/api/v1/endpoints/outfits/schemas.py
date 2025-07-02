@@ -25,12 +25,13 @@ class OutfitCreate(BaseModel):
     accessories_ids: List[int] = []
     fragrances_ids: List[int] = []
 
-    @root_validator
-    def _at_least_one_category(cls, values):
-        if not any(values.get(field) for field in ["top_ids", "bottom_ids", "footwear_ids",
-                                                 "accessories_ids", "fragrances_ids"]):
-            raise ValueError("At least one outfit category must contain items")
-        return values
+    # Валидатор убран - разрешаем создавать пустые образы как заготовки
+    # @root_validator
+    # def _at_least_one_category(cls, values):
+    #     if not any(values.get(field) for field in ["top_ids", "bottom_ids", "footwear_ids",
+    #                                              "accessories_ids", "fragrances_ids"]):
+    #         raise ValueError("At least one outfit category must contain items")
+    #     return values
 
 
 class OutfitUpdate(BaseModel):
