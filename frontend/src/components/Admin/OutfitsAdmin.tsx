@@ -22,7 +22,7 @@ const OutfitsAdmin = () => {
 
   const fetchOutfits = async () => {
     try {
-      const resp = await api.get<Outfit[]>('/api/outfits')
+      const resp = await api.get<Outfit[]>('/api/outfits/')
       setOutfits(resp.data)
     } catch (err) {
       toast({

@@ -22,7 +22,7 @@ const UsersAdmin = () => {
 
   const fetchUsers = async () => {
     try {
-      const resp = await api.get<User[]>('/api/users')
+      const resp = await api.get<User[]>('/api/users/')
       setUsers(resp.data)
     } catch (err) {
       toast({
