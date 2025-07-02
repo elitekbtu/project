@@ -225,7 +225,7 @@ class EnhancedLamodaParser:
             return []
 
     def _convert_to_parsed_product(self, product_data: Dict[str, Any], method: str) -> Optional[ParsedProduct]:
-        """Конвертация данных продукта в ParsedProduct объект"""
+        """Конвертация данных продукта в ParsedProduct объект с нормализацией категорий"""
         try:
             # Проверяем обязательные поля
             if not all([
@@ -235,7 +235,16 @@ class EnhancedLamodaParser:
             ]):
                 return None
             
-            # Создаем ParsedProduct
+            # Извлекаем и нормализуем категорию
+            raw_category = product_data.get('category')
+            raw_clothing_type = self._extract_clothing_type(product_data['name'])
+            normalized_category = self._normalize_category_for_outfits(
+                raw_category, 
+                raw_clothing_type, 
+                product_data['name']
+            )
+            
+            # Создаем ParsedProduct с нормализованными категориями
             return ParsedProduct(
                 sku=product_data['sku'],
                 name=product_data['name'],
@@ -245,9 +254,15 @@ class EnhancedLamodaParser:
                 url=product_data.get('url', ''),
                 image_url=product_data.get('image_url', ''),
                 image_urls=product_data.get('image_urls', []),
-                clothing_type=self._extract_clothing_type(product_data['name']),
+                category=normalized_category,  # Нормализованная категория для системы образов
+                clothing_type=normalized_category,  # Используем ту же нормализованную категорию
                 parse_quality=0.9 if method == 'json' else 0.7,
-                parse_metadata={'method': method, 'images_count': len(product_data.get('image_urls', []))}
+                parse_metadata={
+                    'method': method, 
+                    'images_count': len(product_data.get('image_urls', [])),
+                    'raw_category': raw_category,
+                    'normalized_category': normalized_category
+                }
             )
             
         except Exception as e:
@@ -408,13 +423,20 @@ class EnhancedLamodaParser:
                             
                             price = float(price_str.replace(' ', ''))
                             if 100 <= price <= 10000000:
+                                # Нормализуем категорию для совместимости с системой образов
+                                normalized_category = self._normalize_category_for_outfits(
+                                    None, None, name.strip()
+                                )
+                                
                                 product = ParsedProduct(
                                     sku=f"TXT{self.domain.upper()}{i+1:04d}",
                                     name=name.strip()[:100],
                                     brand=self._normalize_brand(brand.strip()),
                                     price=price,
+                                    category=normalized_category,
+                                    clothing_type=normalized_category,
                                     parse_quality=0.3,  # Низкое качество для текстового парсинга
-                                    parse_metadata={'method': 'text_patterns'}
+                                    parse_metadata={'method': 'text_patterns', 'normalized_category': normalized_category}
                                 )
                                 products.append(product)
                                 
@@ -966,39 +988,120 @@ class EnhancedLamodaParser:
         return "Unknown"
 
     def _extract_clothing_type(self, name: str) -> Optional[str]:
-        """Извлечение типа одежды из названия"""
+        """Извлечение типа одежды из названия товара с нормализацией под систему образов"""
         if not name:
             return None
         
         name_lower = name.lower()
         
-        type_keywords = {
-            'шорты': 'Шорты',
-            'кроссовки': 'Кроссовки',
-            'футболка': 'Футболка',
-            'платье': 'Платье',
-            'брюки': 'Брюки',
-            'джинсы': 'Джинсы',
-            'куртка': 'Куртка',
-            'свитер': 'Свитер',
-            'рубашка': 'Рубашка',
-            'юбка': 'Юбка',
-            'кеды': 'Кеды',
-            'ботинки': 'Ботинки',
-            'сапоги': 'Сапоги',
-            'sneakers': 'Кроссовки',
-            'shoes': 'Обувь',
-            'dress': 'Платье',
-            'shirt': 'Рубашка',
-            'pants': 'Брюки',
-            'jeans': 'Джинсы'
+        # Маппинг ключевых слов на категории системы образов
+        clothing_patterns = {
+            # Верх (tops)
+            'tshirt': ['футболка', 'футболки', 't-shirt', 'tshirt', 'майка', 'майки'],
+            'shirt': ['рубашка', 'рубашки', 'блузка', 'блузки', 'сорочка', 'shirt'],
+            'hoodie': ['худи', 'толстовка', 'толстовки', 'hoodie', 'свитшот', 'свитшоты'],
+            'sweater': ['свитер', 'свитеры', 'джемпер', 'джемперы', 'пуловер', 'пуловеры', 'кардиган', 'кардиганы'],
+            'jacket': ['куртка', 'куртки', 'жакет', 'жакеты', 'пиджак', 'пиджаки', 'бомбер', 'ветровка'],
+            'coat': ['пальто', 'шуба', 'шубы', 'плащ', 'плащи', 'тренч', 'парка', 'парки'],
+            'dress': ['платье', 'платья', 'сарафан', 'сарафаны', 'dress'],
+            
+            # Низ (bottoms)
+            'pants': ['брюки', 'штаны', 'леггинсы', 'лосины', 'pants', 'trousers'],
+            'jeans': ['джинсы', 'jeans', 'denim'],
+            'shorts': ['шорты', 'shorts'],
+            'skirt': ['юбка', 'юбки', 'skirt'],
+            
+            # Обувь (footwear)
+            'footwear': ['кроссовки', 'ботинки', 'туфли', 'сапоги', 'босоножки', 'сандалии', 
+                        'кеды', 'мокасины', 'лоферы', 'обувь', 'shoes', 'sneakers', 'boots'],
+            
+            # Аксессуары (accessories)
+            'accessories': ['сумка', 'сумки', 'рюкзак', 'рюкзаки', 'ремень', 'ремни', 'шарф', 'шарфы',
+                           'платок', 'платки', 'очки', 'часы', 'украшения', 'кольцо', 'серьги',
+                           'браслет', 'цепочка', 'кулон', 'перчатки', 'варежки', 'шапка', 'шапки',
+                           'кепка', 'кепки', 'бейсболка', 'панама', 'берет'],
+            
+            # Ароматы (fragrances)
+            'fragrances': ['духи', 'парфюм', 'туалетная вода', 'одеколон', 'аромат', 'fragrance',
+                          'perfume', 'eau de toilette', 'eau de parfum', 'дезодорант']
         }
         
-        for keyword, type_name in type_keywords.items():
-            if keyword in name_lower:
-                return type_name
+        # Проверяем каждую категорию
+        for clothing_type, keywords in clothing_patterns.items():
+            for keyword in keywords:
+                if keyword in name_lower:
+                    return clothing_type
+        
+        # Дополнительная логика на основе контекста
+        if any(word in name_lower for word in ['мужск', 'женск', 'детск']):
+            # Если есть указание на пол/возраст, пытаемся определить по контексту
+            if any(word in name_lower for word in ['верх', 'топ']):
+                return 'tshirt'  # По умолчанию для верха
+            elif any(word in name_lower for word in ['низ', 'bottom']):
+                return 'pants'   # По умолчанию для низа
         
         return None
+
+    def _normalize_category_for_outfits(self, category: Optional[str], clothing_type: Optional[str], name: str) -> str:
+        """
+        Нормализация категории товара для совместимости с системой образов
+        
+        Возвращает одну из стандартных категорий:
+        - tshirt, shirt, hoodie, sweater, jacket, coat, dress (tops)
+        - pants, jeans, shorts, skirt (bottoms)  
+        - footwear
+        - accessories
+        - fragrances
+        """
+        
+        # Сначала пытаемся использовать clothing_type если он уже определен
+        if clothing_type:
+            return clothing_type
+        
+        # Если есть category, пытаемся ее нормализовать
+        if category:
+            category_lower = category.lower()
+            
+            # Прямое соответствие
+            valid_categories = [
+                'tshirt', 'shirt', 'hoodie', 'sweater', 'jacket', 'coat', 'dress',
+                'pants', 'jeans', 'shorts', 'skirt', 'footwear', 'accessories', 'fragrances'
+            ]
+            
+            if category_lower in valid_categories:
+                return category_lower
+            
+            # Маппинг альтернативных названий
+            category_mapping = {
+                # Tops
+                'top': 'tshirt', 'tops': 'tshirt', 'верх': 'tshirt',
+                'футболка': 'tshirt', 'майка': 'tshirt',
+                'рубашка': 'shirt', 'блузка': 'shirt',
+                'толстовка': 'hoodie', 'худи': 'hoodie', 'свитшот': 'hoodie',
+                'свитер': 'sweater', 'джемпер': 'sweater', 'пуловер': 'sweater',
+                'куртка': 'jacket', 'жакет': 'jacket', 'пиджак': 'jacket',
+                'пальто': 'coat', 'плащ': 'coat',
+                'платье': 'dress', 'сарафан': 'dress',
+                
+                # Bottoms
+                'bottom': 'pants', 'bottoms': 'pants', 'низ': 'pants',
+                'брюки': 'pants', 'штаны': 'pants', 'леггинсы': 'pants',
+                'джинсы': 'jeans', 'denim': 'jeans',
+                'шорты': 'shorts',
+                'юбка': 'skirt',
+                
+                # Others
+                'обувь': 'footwear', 'shoes': 'footwear', 'кроссовки': 'footwear',
+                'аксессуары': 'accessories', 'accessory': 'accessories',
+                'духи': 'fragrances', 'парфюм': 'fragrances', 'аромат': 'fragrances'
+            }
+            
+            if category_lower in category_mapping:
+                return category_mapping[category_lower]
+        
+        # Если ничего не подошло, определяем по названию
+        detected_type = self._extract_clothing_type(name)
+        return detected_type or 'accessories'  # По умолчанию аксессуары
 
     def _extract_sku_from_url(self, url: str) -> Optional[str]:
         """Извлечение SKU из URL"""
