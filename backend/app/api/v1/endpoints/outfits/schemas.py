@@ -18,7 +18,6 @@ class OutfitCreate(BaseModel):
     name: str
     style: str
     description: Optional[str] = None
-    collection: Optional[str] = None
     top_ids: List[int] = []
     bottom_ids: List[int] = []
     footwear_ids: List[int] = []
@@ -38,7 +37,6 @@ class OutfitUpdate(BaseModel):
     name: Optional[str] = None
     style: Optional[str] = None
     description: Optional[str] = None
-    collection: Optional[str] = None
     top_ids: Optional[List[int]] = None
     bottom_ids: Optional[List[int]] = None
     footwear_ids: Optional[List[int]] = None
@@ -51,7 +49,6 @@ class OutfitOut(BaseModel):
     name: str
     style: str
     description: Optional[str] = None
-    collection: Optional[str] = None
     owner_id: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

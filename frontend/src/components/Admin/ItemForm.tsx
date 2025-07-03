@@ -39,11 +39,11 @@ const emptyItem: ItemCreate = {
   name: '',
   brand: '',
   color: '',
-  clothing_type: 'tshirt',
+  clothing_type: 'top',
   image_url: '',
   description: '',
   price: undefined,
-  category: 'tshirt',
+  category: 'top',
   article: '',
   size: '',
   style: '',
@@ -51,20 +51,11 @@ const emptyItem: ItemCreate = {
 }
 
 const categories = [
-  { value: 'tshirt', label: 'Футболка' },
-  { value: 'shirt', label: 'Рубашка' },
-  { value: 'hoodie', label: 'Худи' },
-  { value: 'sweater', label: 'Свитер' },
-  { value: 'jacket', label: 'Куртка' },
-  { value: 'coat', label: 'Пальто' },
-  { value: 'dress', label: 'Платье' },
-  { value: 'pants', label: 'Штаны' },
-  { value: 'jeans', label: 'Джинсы' },
-  { value: 'shorts', label: 'Шорты' },
-  { value: 'skirt', label: 'Юбка' },
-  { value: 'accessories', label: 'Аксессуары' },
-  { value: 'footwear', label: 'Обувь' },
-  { value: 'fragrances', label: 'Ароматы' },
+  { value: 'top', label: 'Верх (футболки, рубашки, платья, куртки)' },
+  { value: 'bottom', label: 'Низ (джинсы, юбки, шорты, брюки)' },
+  { value: 'footwear', label: 'Обувь (кроссовки, туфли, ботинки)' },
+  { value: 'accessory', label: 'Аксессуары (сумки, часы, очки)' },
+  { value: 'fragrance', label: 'Ароматы (духи, парфюм)' },
 ]
 
 const ItemForm = () => {

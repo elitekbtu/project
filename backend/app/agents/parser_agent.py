@@ -47,7 +47,7 @@ KNOWN_BRANDS = [
 
 @dataclass
 class ParsedProduct:
-    """Структура распарсенного товара"""
+    """Структура распарсенного товара для новой системы образов (5 категорий)"""
     sku: str
     name: str
     brand: str
@@ -57,12 +57,12 @@ class ParsedProduct:
     image_url: str = ""
     image_urls: List[str] = field(default_factory=list)
     description: Optional[str] = None
-    category: Optional[str] = None
-    clothing_type: Optional[str] = None
+    category: Optional[str] = None  # Одна из 5 категорий: top, bottom, footwear, accessory, fragrance
+    clothing_type: Optional[str] = None  # То же что и category для совместимости
     color: Optional[str] = None
     sizes: List[str] = field(default_factory=list)
     style: Optional[str] = None
-    collection: Optional[str] = None
+    # Убрано поле collection - коллекции удалены из системы
     rating: Optional[float] = None
     reviews_count: Optional[int] = None
     parse_quality: float = 0.0  # Качество парсинга от 0 до 1
@@ -988,42 +988,55 @@ class EnhancedLamodaParser:
         return "Unknown"
 
     def _extract_clothing_type(self, name: str) -> Optional[str]:
-        """Извлечение типа одежды из названия товара с нормализацией под систему образов"""
+        """Извлечение типа одежды из названия товара с нормализацией под новую систему из 5 категорий"""
         if not name:
             return None
         
         name_lower = name.lower()
         
-        # Маппинг ключевых слов на категории системы образов
+        # Маппинг ключевых слов на 5 строгих категорий образа
         clothing_patterns = {
-            # Верх (tops)
-            'tshirt': ['футболка', 'футболки', 't-shirt', 'tshirt', 'майка', 'майки'],
-            'shirt': ['рубашка', 'рубашки', 'блузка', 'блузки', 'сорочка', 'shirt'],
-            'hoodie': ['худи', 'толстовка', 'толстовки', 'hoodie', 'свитшот', 'свитшоты'],
-            'sweater': ['свитер', 'свитеры', 'джемпер', 'джемперы', 'пуловер', 'пуловеры', 'кардиган', 'кардиганы'],
-            'jacket': ['куртка', 'куртки', 'жакет', 'жакеты', 'пиджак', 'пиджаки', 'бомбер', 'ветровка'],
-            'coat': ['пальто', 'шуба', 'шубы', 'плащ', 'плащи', 'тренч', 'парка', 'парки'],
-            'dress': ['платье', 'платья', 'сарафан', 'сарафаны', 'dress'],
+            # ВСЁ ДЛЯ ВЕРХА -> top
+            'top': [
+                'футболка', 'футболки', 't-shirt', 'tshirt', 'майка', 'майки',
+                'рубашка', 'рубашки', 'блузка', 'блузки', 'блуза', 'сорочка', 'shirt',
+                'худи', 'толстовка', 'толстовки', 'hoodie', 'свитшот', 'свитшоты',
+                'свитер', 'свитеры', 'джемпер', 'джемперы', 'пуловер', 'пуловеры', 'кардиган', 'кардиганы',
+                'куртка', 'куртки', 'жакет', 'жакеты', 'пиджак', 'пиджаки', 'бомбер', 'ветровка',
+                'пальто', 'шуба', 'шубы', 'плащ', 'плащи', 'тренч', 'парка', 'парки',
+                'платье', 'платья', 'сарафан', 'сарафаны', 'dress', 'кофта', 'кофты',
+                'лонгслив', 'лонгсливы', 'longsleeve', 'поло', 'polo',
+                'sweater', 'jacket', 'coat', 'blouse'
+            ],
             
-            # Низ (bottoms)
-            'pants': ['брюки', 'штаны', 'леггинсы', 'лосины', 'pants', 'trousers'],
-            'jeans': ['джинсы', 'jeans', 'denim'],
-            'shorts': ['шорты', 'shorts'],
-            'skirt': ['юбка', 'юбки', 'skirt'],
+            # ВСЁ ДЛЯ НИЗА -> bottom
+            'bottom': [
+                'брюки', 'штаны', 'леггинсы', 'лосины', 'pants', 'trousers',
+                'джинсы', 'jeans', 'denim', 'шорты', 'shorts',
+                'юбка', 'юбки', 'skirt', 'капри', 'легинсы'
+            ],
             
-            # Обувь (footwear)
-            'footwear': ['кроссовки', 'ботинки', 'туфли', 'сапоги', 'босоножки', 'сандалии', 
-                        'кеды', 'мокасины', 'лоферы', 'обувь', 'shoes', 'sneakers', 'boots'],
+            # ОБУВЬ -> footwear
+            'footwear': [
+                'кроссовки', 'ботинки', 'туфли', 'сапоги', 'босоножки', 'сандалии', 
+                'кеды', 'мокасины', 'лоферы', 'обувь', 'shoes', 'sneakers', 'boots',
+                'балетки', 'слипоны', 'угги'
+            ],
             
-            # Аксессуары (accessories)
-            'accessories': ['сумка', 'сумки', 'рюкзак', 'рюкзаки', 'ремень', 'ремни', 'шарф', 'шарфы',
-                           'платок', 'платки', 'очки', 'часы', 'украшения', 'кольцо', 'серьги',
-                           'браслет', 'цепочка', 'кулон', 'перчатки', 'варежки', 'шапка', 'шапки',
-                           'кепка', 'кепки', 'бейсболка', 'панама', 'берет'],
+            # АКСЕССУАРЫ -> accessory
+            'accessory': [
+                'сумка', 'сумки', 'рюкзак', 'рюкзаки', 'ремень', 'ремни', 'шарф', 'шарфы',
+                'платок', 'платки', 'очки', 'часы', 'украшения', 'кольцо', 'серьги',
+                'браслет', 'цепочка', 'кулон', 'перчатки', 'варежки', 'шапка', 'шапки',
+                'кепка', 'кепки', 'бейсболка', 'панама', 'берет', 'bag', 'watch'
+            ],
             
-            # Ароматы (fragrances)
-            'fragrances': ['духи', 'парфюм', 'туалетная вода', 'одеколон', 'аромат', 'fragrance',
-                          'perfume', 'eau de toilette', 'eau de parfum', 'дезодорант']
+            # АРОМАТЫ -> fragrance
+            'fragrance': [
+                'духи', 'парфюм', 'туалетная вода', 'одеколон', 'аромат', 'fragrance',
+                'perfume', 'eau de toilette', 'eau de parfum', 'дезодорант', 'парфюмерия',
+                'масло эфирное', 'эфирное масло', 'спрей ароматический', 'парфюмерная вода'
+            ]
         }
         
         # Проверяем каждую категорию
@@ -1036,72 +1049,141 @@ class EnhancedLamodaParser:
         if any(word in name_lower for word in ['мужск', 'женск', 'детск']):
             # Если есть указание на пол/возраст, пытаемся определить по контексту
             if any(word in name_lower for word in ['верх', 'топ']):
-                return 'tshirt'  # По умолчанию для верха
+                return 'top'  # По умолчанию для верха
             elif any(word in name_lower for word in ['низ', 'bottom']):
-                return 'pants'   # По умолчанию для низа
+                return 'bottom'   # По умолчанию для низа
         
         return None
 
     def _normalize_category_for_outfits(self, category: Optional[str], clothing_type: Optional[str], name: str) -> str:
         """
-        Нормализация категории товара для совместимости с системой образов
+        Нормализация категории товара для совместимости с новой системой образов
         
-        Возвращает одну из стандартных категорий:
-        - tshirt, shirt, hoodie, sweater, jacket, coat, dress (tops)
-        - pants, jeans, shorts, skirt (bottoms)  
-        - footwear
-        - accessories
-        - fragrances
+        Возвращает одну из 5 строгих категорий:
+        - top (верх) - футболки, рубашки, платья, куртки, свитера
+        - bottom (низ) - джинсы, юбки, шорты, брюки, леггинсы
+        - footwear (обувь) - кроссовки, туфли, ботинки, сандалии
+        - accessory (аксессуары) - сумки, часы, очки, украшения  
+        - fragrance (ароматы) - духи, парфюм, туалетная вода
         """
         
         # Сначала пытаемся использовать clothing_type если он уже определен
         if clothing_type:
-            return clothing_type
+            # Преобразуем старые категории в новые 5 категорий
+            old_to_new_mapping = {
+                # Все виды верха -> top
+                'tshirt': 'top', 'shirt': 'top', 'hoodie': 'top', 'sweater': 'top', 
+                'jacket': 'top', 'coat': 'top', 'dress': 'top',
+                # Все виды низа -> bottom  
+                'pants': 'bottom', 'jeans': 'bottom', 'shorts': 'bottom', 'skirt': 'bottom',
+                # Остальные остаются как есть
+                'footwear': 'footwear', 'accessories': 'accessory', 'fragrances': 'fragrance'
+            }
+            return old_to_new_mapping.get(clothing_type, clothing_type)
         
         # Если есть category, пытаемся ее нормализовать
         if category:
             category_lower = category.lower()
             
-            # Прямое соответствие
-            valid_categories = [
-                'tshirt', 'shirt', 'hoodie', 'sweater', 'jacket', 'coat', 'dress',
-                'pants', 'jeans', 'shorts', 'skirt', 'footwear', 'accessories', 'fragrances'
-            ]
-            
-            if category_lower in valid_categories:
+            # Прямое соответствие с новыми 5 категориями
+            if category_lower in ['top', 'bottom', 'footwear', 'accessory', 'fragrance']:
                 return category_lower
             
-            # Маппинг альтернативных названий
+            # Маппинг всех возможных названий на 5 категорий
             category_mapping = {
-                # Tops
-                'top': 'tshirt', 'tops': 'tshirt', 'верх': 'tshirt',
-                'футболка': 'tshirt', 'майка': 'tshirt',
-                'рубашка': 'shirt', 'блузка': 'shirt',
-                'толстовка': 'hoodie', 'худи': 'hoodie', 'свитшот': 'hoodie',
-                'свитер': 'sweater', 'джемпер': 'sweater', 'пуловер': 'sweater',
-                'куртка': 'jacket', 'жакет': 'jacket', 'пиджак': 'jacket',
-                'пальто': 'coat', 'плащ': 'coat',
-                'платье': 'dress', 'сарафан': 'dress',
+                # ВСЁ ДЛЯ ВЕРХА -> top
+                'tops': 'top', 'верх': 'top', 'футболка': 'top', 'майка': 'top',
+                'рубашка': 'top', 'блузка': 'top', 'блуза': 'top', 'shirt': 'top',
+                'толстовка': 'top', 'худи': 'top', 'свитшот': 'top', 'hoodie': 'top',
+                'свитер': 'top', 'джемпер': 'top', 'пуловер': 'top', 'sweater': 'top',
+                'куртка': 'top', 'жакет': 'top', 'пиджак': 'top', 'jacket': 'top',
+                'пальто': 'top', 'плащ': 'top', 'coat': 'top',
+                'платье': 'top', 'сарафан': 'top', 'dress': 'top',
+                'кофта': 'top', 'кофты': 'top', 'джерси': 'top', 'tshirt': 'top',
                 
-                # Bottoms
-                'bottom': 'pants', 'bottoms': 'pants', 'низ': 'pants',
-                'брюки': 'pants', 'штаны': 'pants', 'леггинсы': 'pants',
-                'джинсы': 'jeans', 'denim': 'jeans',
-                'шорты': 'shorts',
-                'юбка': 'skirt',
+                # ВСЁ ДЛЯ НИЗА -> bottom  
+                'bottoms': 'bottom', 'низ': 'bottom', 'брюки': 'bottom', 'штаны': 'bottom',
+                'леггинсы': 'bottom', 'легинсы': 'bottom', 'pants': 'bottom', 'trousers': 'bottom',
+                'джинсы': 'bottom', 'jeans': 'bottom', 'denim': 'bottom',
+                'шорты': 'bottom', 'shorts': 'bottom',
+                'юбка': 'bottom', 'юбки': 'bottom', 'skirt': 'bottom',
+                'лосины': 'bottom', 'капри': 'bottom',
                 
-                # Others
+                # ОБУВЬ -> footwear
                 'обувь': 'footwear', 'shoes': 'footwear', 'кроссовки': 'footwear',
-                'аксессуары': 'accessories', 'accessory': 'accessories',
-                'духи': 'fragrances', 'парфюм': 'fragrances', 'аромат': 'fragrances'
+                'ботинки': 'footwear', 'туфли': 'footwear', 'сапоги': 'footwear',
+                'босоножки': 'footwear', 'сандалии': 'footwear', 'балетки': 'footwear',
+                'кеды': 'footwear', 'слипоны': 'footwear', 'мокасины': 'footwear',
+                'boots': 'footwear', 'sneakers': 'footwear', 'sandals': 'footwear',
+                
+                # АКСЕССУАРЫ -> accessory
+                'аксессуары': 'accessory', 'accessories': 'accessory', 'сумка': 'accessory',
+                'сумки': 'accessory', 'рюкзак': 'accessory', 'рюкзаки': 'accessory',
+                'ремень': 'accessory', 'ремни': 'accessory', 'часы': 'accessory',
+                'очки': 'accessory', 'украшения': 'accessory', 'кольцо': 'accessory',
+                'серьги': 'accessory', 'браслет': 'accessory', 'шарф': 'accessory',
+                'платок': 'accessory', 'перчатки': 'accessory', 'шапка': 'accessory',
+                'bag': 'accessory', 'watch': 'accessory', 'glasses': 'accessory',
+                
+                # АРОМАТЫ -> fragrance  
+                'духи': 'fragrance', 'парфюм': 'fragrance', 'аромат': 'fragrance',
+                'туалетная вода': 'fragrance', 'одеколон': 'fragrance', 'парфюмерия': 'fragrance',
+                'fragrance': 'fragrance', 'perfume': 'fragrance', 'cologne': 'fragrance'
             }
             
             if category_lower in category_mapping:
                 return category_mapping[category_lower]
         
         # Если ничего не подошло, определяем по названию
-        detected_type = self._extract_clothing_type(name)
-        return detected_type or 'accessories'  # По умолчанию аксессуары
+        detected_type = self._smart_extract_category_from_name(name)
+        return detected_type or 'accessory'  # По умолчанию аксессуары
+    
+    def _smart_extract_category_from_name(self, name: str) -> Optional[str]:
+        """Умное извлечение одной из 5 категорий из названия товара"""
+        if not name:
+            return None
+        
+        name_lower = name.lower()
+        
+        # Проверяем по ключевым словам для каждой из 5 категорий
+        category_keywords = {
+            'top': [
+                'футболка', 'майка', 'рубашка', 'блузка', 'блуза', 'платье',
+                'худи', 'толстовка', 'свитшот', 'свитер', 'джемпер', 'пуловер',
+                'куртка', 'жакет', 'пиджак', 'пальто', 'плащ', 'кофта',
+                'лонгслив', 'лонгсливы', 'поло',
+                't-shirt', 'tshirt', 'shirt', 'blouse', 'dress', 'hoodie',
+                'sweater', 'jacket', 'coat', 'cardigan', 'longsleeve', 'polo'
+            ],
+            'bottom': [
+                'брюки', 'штаны', 'джинсы', 'шорты', 'юбка', 'леггинсы',
+                'лосины', 'капри', 'pants', 'jeans', 'shorts', 'skirt',
+                'trousers', 'leggings'
+            ],
+            'footwear': [
+                'кроссовки', 'ботинки', 'туфли', 'сапоги', 'босоножки',
+                'сандалии', 'балетки', 'кеды', 'мокасины', 'обувь',
+                'sneakers', 'boots', 'shoes', 'sandals', 'flats'
+            ],
+            'accessory': [
+                'сумка', 'рюкзак', 'ремень', 'часы', 'очки', 'шарф',
+                'платок', 'перчатки', 'шапка', 'кепка', 'украшения',
+                'bag', 'backpack', 'belt', 'watch', 'glasses', 'scarf'
+            ],
+            'fragrance': [
+                'духи', 'парфюм', 'туалетная вода', 'одеколон', 'аромат',
+                'масло эфирное', 'эфирное', 'спрей ароматический', 'парфюмерная вода',
+                'perfume', 'fragrance', 'cologne', 'eau de toilette', 'essential oil'
+            ]
+        }
+        
+        # Ищем совпадения для каждой категории
+        for category, keywords in category_keywords.items():
+            for keyword in keywords:
+                if keyword in name_lower:
+                    return category
+        
+        return None
 
     def _extract_sku_from_url(self, url: str) -> Optional[str]:
         """Извлечение SKU из URL"""

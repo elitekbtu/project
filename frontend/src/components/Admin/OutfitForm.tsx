@@ -20,7 +20,7 @@ const emptyOutfit: OutfitCreate = {
   footwear_ids: [],
   accessories_ids: [],
   fragrances_ids: [],
-  collection: '',
+  // Убрано поле collection - коллекции больше не используются
 }
 
 const OutfitForm = () => {
@@ -42,12 +42,12 @@ const OutfitForm = () => {
             name: data.name,
             style: data.style,
             description: data.description ?? '',
-            top_ids: (data.tops || []).map((t) => t.id),
-            bottom_ids: (data.bottoms || []).map((b) => b.id),
+            top_ids: (data.top || []).map((t) => t.id),
+            bottom_ids: (data.bottom || []).map((b) => b.id),
             footwear_ids: (data.footwear || []).map((f) => f.id),
-            accessories_ids: (data.accessories || []).map((a) => a.id),
-            fragrances_ids: (data.fragrances || []).map((fr) => fr.id),
-            collection: data.collection ?? '',
+            accessories_ids: (data.accessory || []).map((a) => a.id),
+            fragrances_ids: (data.fragrance || []).map((fr) => fr.id),
+            // Убрано поле collection
           })
         }
       } catch (error) {
@@ -96,7 +96,7 @@ const OutfitForm = () => {
     setSubmitting(true)
 
     try {
-      const basePayload = { ...form, collection: form.collection?.trim() || undefined }
+      const basePayload = { ...form }
       if (isEdit) {
         const payload: OutfitUpdate = basePayload
         await updateOutfit(Number(id), payload)
@@ -187,19 +187,7 @@ const OutfitForm = () => {
               />
             </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="collection" className="text-sm font-medium text-muted-foreground">
-                Коллекция
-              </Label>
-              <Input
-                id="collection"
-                name="collection"
-                value={form.collection || ''}
-                onChange={handleChange}
-                placeholder="Напр. Summer 2024"
-                className="focus:border-primary focus:ring-1 focus:ring-primary"
-              />
-            </div>
+            {/* Убрано поле коллекции - больше не используется в новой системе образов */}
 
             <div className="space-y-3">
               <Label htmlFor="description" className="text-sm font-medium text-muted-foreground">

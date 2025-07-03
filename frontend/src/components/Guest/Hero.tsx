@@ -4,6 +4,7 @@ import { ArrowRight, ChevronRight } from 'lucide-react'
 import { Button } from '../ui/button'
 import { useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
+import PWAInstallButton from '../PWAInstallButton'
 
 const Hero = () => {
   const bgControls = useAnimation()
@@ -153,6 +154,20 @@ const Hero = () => {
                 </span>
               </Link>
             </Button>
+          </motion.div>
+
+          {/* Кнопка установки PWA */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+            className="mt-4 flex justify-center"
+          >
+            <PWAInstallButton 
+              variant="ghost" 
+              size="sm" 
+              className="text-muted-foreground hover:text-foreground"
+            />
           </motion.div>
 
           {/* Карусель логотипов партнёров */}

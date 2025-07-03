@@ -43,7 +43,7 @@ class EnhanceResult:
     category: Optional[str] = None
     article: Optional[str] = None
     style: Optional[str] = None
-    collection: Optional[str] = None
+    # Убрано поле collection - коллекции больше не используются
     
     # Метаданные
     materials: List[str] = field(default_factory=list)
@@ -287,9 +287,7 @@ class DescriptionAgent:
             result.style = ai_data['style']
             enhanced_fields.append('style')
         
-        if ai_data.get('collection'):
-            result.collection = ai_data['collection']
-            enhanced_fields.append('collection')
+        # Убрано поле collection - коллекции больше не используются
         
         # Дополнительные данные
         result.materials = ai_data.get('materials', [])
@@ -314,10 +312,7 @@ class DescriptionAgent:
             result.description = self._generate_basic_description(result)
             enhanced_fields.append('description')
         
-        # Определяем коллекцию по бренду и сезону
-        if not result.collection and result.brand:
-            result.collection = f"{result.brand} Collection"
-            enhanced_fields.append('collection')
+        # Убрано поле collection - коллекции больше не используются
         
         # Базовые материалы по типу одежды
         result.materials = self._guess_materials(result.clothing_type)

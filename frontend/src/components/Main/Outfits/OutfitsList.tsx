@@ -43,7 +43,7 @@ const OutfitsList = () => {
           const det = details.find((d) => d.status === 'fulfilled' && (d as any).value.data.id === p.id) as any
           if (det && det.status === 'fulfilled') {
             const data: OutfitOut = det.value.data
-            const firstItem = data.tops?.[0] || data.bottoms?.[0] || data.footwear?.[0] || data.accessories?.[0]
+            const firstItem = data.top?.[0] || data.bottom?.[0] || data.footwear?.[0] || data.accessory?.[0]
             return { ...p, image_url: firstItem?.image_url || null }
           }
           return p

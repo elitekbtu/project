@@ -95,7 +95,7 @@ def parse_catalog_task(self, query: str, limit: int = 20, domain: str = "kz") ->
                     'color': product.color,
                     'sizes': product.sizes,
                     'style': product.style,
-                    'collection': product.collection,
+                    # Убрано поле collection - коллекции больше не используются
                     'rating': product.rating,
                     'reviews_count': product.reviews_count,
                     'parse_quality': product.parse_quality,
@@ -222,7 +222,7 @@ def import_to_catalog_task(self, parsing_result: Dict[str, Any]) -> Dict[str, An
                         color=product_data.get('color'),
                         sizes=product_data.get('sizes', []),
                         style=product_data.get('style'),
-                        collection=product_data.get('collection'),
+                        # Убрано поле collection - коллекции больше не используются
                         rating=product_data.get('rating'),
                         reviews_count=product_data.get('reviews_count'),
                         parse_quality=product_data.get('parse_quality', 0.0),

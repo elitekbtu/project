@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, ArrowRight, X, Search, Star } from 'lucide-react'
-import { listItems, listFavoriteItems, listCollections } from '../../../api/items'
+import { listItems, listFavoriteItems } from '../../../api/items'
 import { type ItemOut } from '../../../api/schemas'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
@@ -10,21 +10,16 @@ import { useToast } from '../../ui/use-toast'
 import { createOutfit } from '../../../api/outfits'
 import { useNavigate } from 'react-router-dom'
 
-// Mapping for UI labels and the list of API categories grouped under each logical part of outfit
+// Новая конфигурация для 5 категорий образа
 export const categoryConfig = [
   {
-    key: 'tops',
-    apiTypes: ['tshirt', 'shirt', 'hoodie', 'sweater', 'jacket', 'coat', 'dress'],
+    key: 'top',
+    apiTypes: ['top'],
     label: 'Верх',
   },
   {
-    key: 'accessories',
-    apiTypes: ['accessories'],
-    label: 'Аксессуары',
-  },
-  {
-    key: 'bottoms',
-    apiTypes: ['pants', 'jeans', 'shorts', 'skirt'],
+    key: 'bottom',
+    apiTypes: ['bottom'],
     label: 'Низ',
   },
   {
@@ -33,8 +28,13 @@ export const categoryConfig = [
     label: 'Обувь',
   },
   {
-    key: 'fragrances',
-    apiTypes: ['fragrances'],
+    key: 'accessory',
+    apiTypes: ['accessory'],
+    label: 'Аксессуары',
+  },
+  {
+    key: 'fragrance',
+    apiTypes: ['fragrance'],
     label: 'Ароматы',
   },
 ] as const
@@ -64,8 +64,8 @@ const OutfitBuilder = () => {
   // form state
   const [name, setName] = useState('')
   const [styleName, setStyleName] = useState('')
-  const [collection, setCollection] = useState<string | undefined>()
-  const [collections, setCollections] = useState<string[]>([])
+  // Убрано поле collection - коллекции больше не используются
+  // Убрано - коллекции больше не используются
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -113,9 +113,7 @@ const OutfitBuilder = () => {
     fetchAll()
   }, [])
 
-  useEffect(() => {
-    listCollections().then(setCollections).catch(() => {})
-  }, [])
+  // Убрано получение коллекций
 
   // Search effect
   useEffect(() => {
@@ -211,18 +209,7 @@ const OutfitBuilder = () => {
           <div className="grid gap-3 sm:grid-cols-2">
             <Input placeholder="Название образа" value={name} onChange={(e) => setName(e.target.value)} />
             <Input placeholder="Стиль" value={styleName} onChange={(e) => setStyleName(e.target.value)} />
-            <div className="sm:col-span-2">
-              <select
-                value={collection || ''}
-                onChange={(e) => setCollection(e.target.value || undefined)}
-                className="w-full rounded border px-3 py-2 text-sm"
-              >
-                <option value="">Без коллекции</option>
-                {collections.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
+            {/* Убрано поле коллекции - больше не используется в новой системе образов */}
           </div>
 
           <div className="flex items-center gap-2">
@@ -293,12 +280,12 @@ const OutfitBuilder = () => {
                   name: name.trim(),
                   style: styleName.trim(),
                   description: '',
-                  collection,
-                  top_ids: selectedByCat.tops?.map((i) => i.id) || [],
-                  bottom_ids: selectedByCat.bottoms?.map((i) => i.id) || [],
+                  // Убрано поле collection
+                  top_ids: selectedByCat.top?.map((i) => i.id) || [],
+                  bottom_ids: selectedByCat.bottom?.map((i) => i.id) || [],
                   footwear_ids: selectedByCat.footwear?.map((i) => i.id) || [],
-                  accessories_ids: selectedByCat.accessories?.map((i) => i.id) || [],
-                  fragrances_ids: selectedByCat.fragrances?.map((i) => i.id) || [],
+                  accessories_ids: selectedByCat.accessory?.map((i) => i.id) || [],
+                  fragrances_ids: selectedByCat.fragrance?.map((i) => i.id) || [],
                 }
                 const created = await createOutfit(payload as any)
                 toast({ title: 'Образ создан', description: created.name })

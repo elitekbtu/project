@@ -5,7 +5,7 @@ import { Input } from '../../ui/input'
 import { Textarea } from '../../ui/textarea'
 import { Label } from '../../ui/label'
 import { useToast } from '../../ui/use-toast'
-import { listItems, listCollections } from '../../../api/items'
+import { listItems } from '../../../api/items'
 import { type ItemOut } from '../../../api/schemas'
 import { createOutfit } from '../../../api/outfits'
 import { categoryConfig } from './OutfitBuilder'
@@ -37,8 +37,8 @@ const CreateOutfit = () => {
   const [name, setName] = useState('')
   const [style, setStyle] = useState('')
   const [description, setDescription] = useState('')
-  const [collection, setCollection] = useState<string>('')
-  const [collections, setCollections] = useState<string[]>([])
+  // Убрано поле collection - коллекции больше не используются
+  // Убрано - коллекции больше не используются
 
   // Search state
   const [query, setQuery] = useState('')
@@ -86,7 +86,7 @@ const CreateOutfit = () => {
       }
     }
     fetchAll()
-    listCollections().then(setCollections).catch(() => {})
+    // Убрано получение коллекций
   }, [toast])
 
   // Debounced search effect
@@ -170,7 +170,7 @@ const CreateOutfit = () => {
         name,
         style,
         description,
-        collection: collection || undefined,
+        // Убрано поле collection
       }
       categoryConfig.forEach((c) => {
         const selList = selectedByCat[c.key] || []
@@ -453,22 +453,7 @@ const CreateOutfit = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="collection" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Коллекция
-                </Label>
-                <select
-                  id="collection"
-                  value={collection}
-                  onChange={(e) => setCollection(e.target.value)}
-                  className="w-full border border-gray-300 focus:border-black focus:ring-0 bg-white text-black px-3 py-2 text-sm"
-                >
-                  <option value="">Без коллекции</option>
-                  {collections.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
+              {/* Убрано поле коллекции - больше не используется в новой системе образов */}
             </div>
 
             <div className="pt-8 border-t border-gray-200">

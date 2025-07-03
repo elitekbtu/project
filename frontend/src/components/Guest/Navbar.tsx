@@ -21,9 +21,7 @@ const GuestNavbar = () => {
           <Link to="/catalog" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             Каталог
           </Link>
-          <Link to="/collections" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-            Коллекции
-          </Link>
+          {/* Убрано - коллекции больше не используются */}
           <Link to="/about" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             О нас
           </Link>

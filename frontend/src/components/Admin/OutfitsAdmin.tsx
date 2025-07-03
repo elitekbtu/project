@@ -10,7 +10,7 @@ interface Outfit {
   id: number
   name: string
   style: string
-  collection?: string | null
+  // Убрано поле collection
   total_price?: number | null
 }
 
@@ -94,7 +94,7 @@ const OutfitsAdmin = () => {
               <th className="px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">ID</th>
               <th className="px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">Название</th>
               <th className="px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">Стиль</th>
-              <th className="px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">Коллекция</th>
+              {/* Убрано поле коллекции */}
               <th className="px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">Цена</th>
               <th className="px-6 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">Действия</th>
             </tr>
@@ -117,9 +117,7 @@ const OutfitsAdmin = () => {
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                     {outfit.style}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                    {outfit.collection ?? '-'}
-                  </td>
+                  {/* Убрано поле коллекции */}
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                     {outfit.total_price ? `${outfit.total_price} ₽` : '-'}
                   </td>
@@ -156,7 +154,7 @@ const OutfitsAdmin = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                   Нет доступных образов
                 </td>
               </tr>

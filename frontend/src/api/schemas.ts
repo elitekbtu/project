@@ -87,15 +87,15 @@ export interface OutfitOut {
   name: string;
   style: string;
   description?: string;
-  collection?: string;
+  // Убрано поле collection - коллекции больше не используются
   owner_id: string;
   created_at?: string;
   updated_at?: string;
-  tops?: OutfitItemBase[];
-  bottoms?: OutfitItemBase[];
+  top?: OutfitItemBase[];
+  bottom?: OutfitItemBase[];
   footwear?: OutfitItemBase[];
-  accessories?: OutfitItemBase[];
-  fragrances?: OutfitItemBase[];
+  accessory?: OutfitItemBase[];
+  fragrance?: OutfitItemBase[];
   total_price?: number;
 }
 
@@ -138,7 +138,7 @@ export interface OutfitCreate {
   name: string;
   style: string;
   description?: string;
-  collection?: string;
+  // Убрано поле collection - коллекции больше не используются
   top_ids?: number[];
   bottom_ids?: number[];
   footwear_ids?: number[];
@@ -150,7 +150,7 @@ export interface OutfitUpdate {
   name?: string;
   style?: string;
   description?: string;
-  collection?: string;
+  // Убрано поле collection - коллекции больше не используются
   top_ids?: number[];
   bottom_ids?: number[];
   footwear_ids?: number[];

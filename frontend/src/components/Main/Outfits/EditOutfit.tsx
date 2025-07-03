@@ -5,7 +5,7 @@ import { Input } from '../../ui/input'
 import { Textarea } from '../../ui/textarea'
 import { Label } from '../../ui/label'
 import { useToast } from '../../ui/use-toast'
-import { listItems, listCollections, getItem } from '../../../api/items'
+import { listItems, getItem } from '../../../api/items'
 import { type ItemOut } from '../../../api/schemas'
 import { getOutfit, updateOutfit } from '../../../api/outfits'
 import { categoryConfig } from './OutfitBuilder'
@@ -16,11 +16,11 @@ interface IndexState {
 }
 
 const idFieldMap: Record<string, string> = {
-  tops: 'top_ids',
-  bottoms: 'bottom_ids',
+  top: 'top_ids',
+  bottom: 'bottom_ids',
   footwear: 'footwear_ids',
-  accessories: 'accessories_ids',
-  fragrances: 'fragrances_ids',
+  accessory: 'accessories_ids',
+  fragrance: 'fragrances_ids',
 }
 
 const EditOutfit = () => {
@@ -38,8 +38,7 @@ const EditOutfit = () => {
   const [name, setName] = useState('')
   const [style, setStyle] = useState('')
   const [description, setDescription] = useState('')
-  const [collection, setCollection] = useState<string>('')
-  const [collections, setCollections] = useState<string[]>([])
+  // Убрано поле collection - коллекции больше не используются
 
   // Search state
   const [query, setQuery] = useState('')
@@ -82,7 +81,7 @@ const EditOutfit = () => {
         setName(data.name)
         setStyle(data.style)
         setDescription(data.description ?? '')
-        setCollection(data.collection ?? '')
+        // Убрано поле collection
 
         const sel: Record<string, ItemOut[]> = {}
         await Promise.all(
@@ -121,7 +120,7 @@ const EditOutfit = () => {
       }
     }
     init()
-    listCollections().then(setCollections).catch(() => {})
+    // Убрано получение коллекций
   }, [id, toast])
 
   // Search effect
@@ -197,7 +196,7 @@ const EditOutfit = () => {
     setSubmitting(true)
     try {
       const payload: Record<string, any> = {
-        name, style, description, collection: collection || undefined,
+        name, style, description,
       }
       categoryConfig.forEach((c) => {
         const selList = selectedByCat[c.key] || []
@@ -380,13 +379,7 @@ const EditOutfit = () => {
                 <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Добавьте описание образа..." rows={4} className="border-gray-300 focus:border-black focus:ring-0 bg-white text-black placeholder-gray-400 resize-none" />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="collection" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Коллекция</Label>
-                <select id="collection" value={collection} onChange={(e) => setCollection(e.target.value)} className="w-full border border-gray-300 focus:border-black focus:ring-0 bg-white text-black px-3 py-2 text-sm">
-                  <option value="">Без коллекции</option>
-                  {collections.map((c) => (<option key={c} value={c}>{c}</option>))}
-                </select>
-              </div>
+              {/* Убрано поле коллекции - больше не используется в новой системе образов */}
             </div>
 
             <div className="pt-8 border-t border-gray-200">

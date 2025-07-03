@@ -16,7 +16,7 @@ export interface ListItemsParams {
   q?: string
   category?: string
   style?: string
-  collection?: string
+  // Убрано поле collection - коллекции больше не используются
   min_price?: number
   max_price?: number
   size?: string
@@ -62,17 +62,7 @@ export const similarItems = async (id: number, limit?: number) => {
   return resp.data
 }
 
-export const itemsByCollection = async (name: string) => {
-  const resp = await api.get<ItemOut[]>('/api/items/collections', { params: { name } })
-  return resp.data
-}
-
-// ----- Collections names ----
-
-export const listCollections = async () => {
-  const resp = await api.get<string[]>('/api/items/collections/names')
-  return resp.data
-}
+// Убрано - коллекции больше не используются в новой системе образов
 
 // ---------- Favorites ----------
 

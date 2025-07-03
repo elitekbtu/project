@@ -1,35 +1,27 @@
+// Новая система из 5 категорий образа
 export const CLOTHING_TYPES = [
-  'tshirt',
-  'shirt',
-  'hoodie',
-  'sweater',
-  'jacket',
-  'coat',
-  'dress',
-  'pants',
-  'jeans',
-  'shorts',
-  'skirt',
-  'accessories',
+  'top',
+  'bottom', 
   'footwear',
-  'fragrances',
+  'accessory',
+  'fragrance',
 ] as const;
 export type ClothingType = (typeof CLOTHING_TYPES)[number]; 
 
-// New: mapping to display category names in Russian with capital letters
+// Маппинг для отображения названий категорий на русском языке
 export const CATEGORY_LABELS: Record<string, string> = {
-  tshirt: 'Футболка',
-  shirt: 'Рубашка',
-  hoodie: 'Худи',
-  sweater: 'Свитер',
-  jacket: 'Куртка',
-  coat: 'Пальто',
-  dress: 'Платье',
-  pants: 'Штаны',
-  jeans: 'Джинсы',
-  shorts: 'Шорты',
-  skirt: 'Юбка',
-  accessories: 'Аксессуары',
+  top: 'Верх',
+  bottom: 'Низ',
   footwear: 'Обувь',
-  fragrances: 'Ароматы',
+  accessory: 'Аксессуары',
+  fragrance: 'Ароматы',
+};
+
+// Детальные подкатегории для каждой из 5 основных категорий
+export const CATEGORY_DETAILS: Record<string, string[]> = {
+  top: ['футболка', 'рубашка', 'худи', 'свитер', 'куртка', 'пальто', 'платье', 'лонгслив', 'поло'],
+  bottom: ['джинсы', 'штаны', 'шорты', 'юбка', 'леггинсы', 'лосины'],
+  footwear: ['кроссовки', 'ботинки', 'туфли', 'сапоги', 'босоножки', 'сандалии', 'кеды'],
+  accessory: ['сумка', 'рюкзак', 'ремень', 'часы', 'очки', 'шарф', 'шапка', 'украшения'],
+  fragrance: ['духи', 'парфюм', 'туалетная вода', 'одеколон', 'масло эфирное'],
 }; 

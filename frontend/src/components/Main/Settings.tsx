@@ -11,6 +11,7 @@ import { Textarea } from '../ui/textarea'
 import { useToast } from '../ui/use-toast'
 import { useAuth } from '../../context/AuthContext'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu'
+import PWAStatus from '../PWAStatus'
 
 const emptyProfile: ProfileUpdate = {
   avatar: '',
@@ -485,6 +486,12 @@ const Settings = () => {
               />
             </div>
           </div>
+        </div>
+
+        {/* PWA Status */}
+        <div className="rounded-xl border bg-card p-6 shadow-sm">
+          <h2 className="mb-6 text-xl font-semibold text-foreground">Приложение</h2>
+          <PWAStatus showDetails={true} />
         </div>
 
         <div className="flex justify-between gap-4">

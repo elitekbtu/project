@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { CartProvider } from './context/CartContext'
 import { FavoritesProvider } from './context/FavoritesContext'
+import { initializePWA } from './utils/pwa'
 // Layouts
 import GuestLayout from './layouts/GuestLayout'
 import MainLayout from './layouts/MainLayout'
@@ -36,6 +38,11 @@ import CreateOutfit from './components/Main/Outfits/CreateOutfit'
 import EditOutfit from './components/Main/Outfits/EditOutfit'
 
 function App() {
+  // Инициализация PWA
+  useEffect(() => {
+    initializePWA();
+  }, []);
+
   return (
     <CartProvider>
       <FavoritesProvider>

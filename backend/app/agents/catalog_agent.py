@@ -54,7 +54,7 @@ class PerfectItem:
     category: Optional[str] = None
     article: Optional[str] = None
     style: Optional[str] = None
-    collection: Optional[str] = None
+    # Убрано поле collection - коллекции больше не используются
     image_url: Optional[str] = None  # Основное изображение
     
     # Дополнительные изображения
@@ -267,7 +267,7 @@ class CatalogAgent:
             category=enhanced.category,
             article=enhanced.article,
             style=enhanced.style,
-            collection=enhanced.collection,
+            # Убрано поле collection - коллекции больше не используются
             image_url=main_image,
             image_urls=all_images,
             
@@ -412,7 +412,7 @@ class CatalogAgent:
                 category=perfect_item.category,
                 article=perfect_item.article,
                 style=perfect_item.style,
-                collection=perfect_item.collection,
+                # Убрано поле collection - коллекции больше не используются
                 image_url=perfect_item.image_url
             )
             
@@ -477,8 +477,8 @@ class CatalogAgent:
                 ('size', 'size'),
                 ('clothing_type', 'clothing_type'),
                 ('category', 'category'),
-                ('style', 'style'),
-                ('collection', 'collection')
+                ('style', 'style')
+                # Убрано поле collection - коллекции больше не используются
             ]
             
             for perfect_field, db_field in fields_to_update:
