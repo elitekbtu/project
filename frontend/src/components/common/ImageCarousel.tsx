@@ -28,6 +28,11 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, className = '', a
     setPage([page + newDir, newDir])
   }
 
+  // Convert image URLs to use local server if they start with /uploads/
+  const processedImages = images.map(img => 
+    img.startsWith('/uploads/') ? `http://localhost:8000${img}` : img
+  )
+
   return (
     <div className={`relative overflow-hidden rounded-md border border-border bg-background ${aspectClassName} ${className}`}>{
       /* Wrapper for correct aspect ratio */
@@ -35,7 +40,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, className = '', a
       <AnimatePresence custom={direction} initial={false}>
         <motion.img
           key={imageIndex}
-          src={images[imageIndex]}
+          src={processedImages[imageIndex]}
           custom={direction}
           variants={variants}
           initial="enter"

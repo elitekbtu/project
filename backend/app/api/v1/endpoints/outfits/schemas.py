@@ -18,6 +18,7 @@ class OutfitCreate(BaseModel):
     name: str
     style: str
     description: Optional[str] = None
+    ai_generated_image: Optional[str] = None  # URL сгенерированного ИИ изображения
     top_ids: List[int] = []
     bottom_ids: List[int] = []
     footwear_ids: List[int] = []
@@ -37,6 +38,7 @@ class OutfitUpdate(BaseModel):
     name: Optional[str] = None
     style: Optional[str] = None
     description: Optional[str] = None
+    ai_generated_image: Optional[str] = None  # URL сгенерированного ИИ изображения
     top_ids: Optional[List[int]] = None
     bottom_ids: Optional[List[int]] = None
     footwear_ids: Optional[List[int]] = None
@@ -49,6 +51,7 @@ class OutfitOut(BaseModel):
     name: str
     style: str
     description: Optional[str] = None
+    ai_generated_image: Optional[str] = None  # URL сгенерированного ИИ изображения
     owner_id: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -75,4 +78,20 @@ class OutfitCommentOut(OutfitCommentCreate):
     likes: Optional[int] = 0
 
     class Config:
-        orm_mode = True 
+        orm_mode = True
+
+
+# ---------- AI Outfit Image Generation ----------
+
+class OutfitImageGenerateRequest(BaseModel):
+    top_ids: List[int] = []
+    bottom_ids: List[int] = []
+    footwear_ids: List[int] = []
+    accessories_ids: List[int] = []
+    fragrances_ids: List[int] = []
+    height: Optional[float] = None
+    weight: Optional[float] = None
+
+
+class OutfitImageGenerateResponse(BaseModel):
+    image_url: str

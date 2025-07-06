@@ -8,9 +8,8 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str = "TRC Backend"
     BACKEND_CORS_ORIGINS: List[str] = ["https://164.90.225.127", "http://localhost"]
-
-    DATABASE_URL: str = Field("postgresql://postgres:postgres@db:5432/trcapp", env="DATABASE_URL")
-    REDIS_URL: str = Field("redis://redis:6379/0", env="REDIS_URL")
+    DATABASE_URL: str = Field(env="DATABASE_URL")
+    REDIS_URL: str = Field(env="REDIS_URL")
 
     CELERY_BROKER_URL: str = Field("amqp://rabbitmq:5672//", env="CELERY_BROKER_URL")
 
@@ -30,6 +29,18 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+
+    # --- Validators -----------------------------------------------------
+
+    @validator("DATABASE_URL")
+    def _validate_database_url(cls, v: str) -> str:  # noqa: D401
+        """Ensure DATABASE_URL does not use insecure default credentials."""
+        if "postgres:postgres@" in v:
+            raise ValueError(
+                "Insecure default DATABASE_URL detected. "
+                "Please set a secure DATABASE_URL environment variable in your .env file."
+            )
+        return v
 
 
 @lru_cache

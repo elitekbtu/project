@@ -7,6 +7,7 @@ import { Card, CardContent } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { TrendingUp, Heart, ShoppingBag, Sparkles } from 'lucide-react'
+import ItemImage from '../common/ItemImage'
 import { CATEGORY_LABELS } from '../../constants'
 
 interface Item {
@@ -139,17 +140,12 @@ const Home = () => {
                 <Card className="group overflow-hidden transition-all hover:shadow-lg">
                   <Link to={`/items/${item.id}`}>
                     <div className="relative aspect-square md:aspect-[3/4] overflow-hidden">
-                      {item.image_url ? (
-                        <img
-                          src={item.image_url}
-                          alt={item.name}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-muted">
-                          <ShoppingBag className="h-12 w-12 text-muted-foreground" />
-                        </div>
-                      )}
+                      <ItemImage
+                        src={item.image_url}
+                        alt={item.name}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        fallbackClassName="h-full w-full"
+                      />
                       <div className="absolute top-3 left-3">
                         <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm">
                           #{index + 1}

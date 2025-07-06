@@ -15,6 +15,7 @@ import { Textarea } from '../../ui/textarea'
 import { useCart } from '../../../context/CartContext'
 import { useFavorites } from '../../../context/FavoritesContext'
 import ImageCarousel from '../../common/ImageCarousel'
+import ItemImage from '../../common/ItemImage'
 import { CATEGORY_LABELS } from '../../../constants'
 
 interface Item {
@@ -184,17 +185,14 @@ const ItemDetail = () => {
               className="rounded-xl shadow-sm" 
               aspectClassName="aspect-square"
             />
-          ) : item.image_url ? (
+          ) : (
             <div className="aspect-square overflow-hidden rounded-xl bg-muted shadow-sm">
-              <img
+              <ItemImage
                 src={item.image_url}
                 alt={item.name}
                 className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                fallbackClassName="flex aspect-square items-center justify-center rounded-xl bg-muted shadow-sm"
               />
-            </div>
-          ) : (
-            <div className="flex aspect-square items-center justify-center rounded-xl bg-muted shadow-sm">
-              <ShoppingBag className="h-16 w-16 text-muted-foreground" />
             </div>
           )}
         </motion.div>

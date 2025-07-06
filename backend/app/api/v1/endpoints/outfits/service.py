@@ -275,6 +275,7 @@ def create_outfit(db: Session, user: User, outfit_in: OutfitCreate):
         name=outfit_in.name,
         style=outfit_in.style,
         description=outfit_in.description,
+        ai_generated_image=outfit_in.ai_generated_image,  # Сохраняем ИИ изображение
         owner_id=str(user.id),
     )
 
@@ -387,7 +388,7 @@ def update_outfit(db: Session, user: User, outfit_id: int, outfit_in: OutfitUpda
     update_data = outfit_in.dict(exclude_unset=True)
 
     # Обновляем основные поля
-    for field in ["name", "style", "description"]:
+    for field in ["name", "style", "description", "ai_generated_image"]:
         if field in update_data:
             setattr(outfit, field, update_data[field])
 

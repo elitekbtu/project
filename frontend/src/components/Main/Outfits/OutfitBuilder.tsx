@@ -9,6 +9,7 @@ import { useFavorites } from '../../../context/FavoritesContext'
 import { useToast } from '../../ui/use-toast'
 import { createOutfit } from '../../../api/outfits'
 import { useNavigate } from 'react-router-dom'
+import ItemImage from '../../common/ItemImage'
 
 // Новая конфигурация для 5 категорий образа
 export const categoryConfig = [
@@ -189,11 +190,12 @@ const OutfitBuilder = () => {
           const selectedList = selectedByCat[c.key] || []
           return selectedList.map((sel, j) => (
             sel.image_url ? (
-              <img
+              <ItemImage
                 key={`${c.key}-${sel.id}`}
                 src={sel.image_url}
                 alt={sel.name}
                 className="absolute inset-0 h-full w-full object-contain"
+                fallbackClassName="absolute inset-0 h-full w-full"
                 style={{ zIndex: i + j + 1 }}
               />
             ) : null
@@ -226,11 +228,12 @@ const OutfitBuilder = () => {
             <div className="max-h-60 overflow-y-auto pt-2 grid gap-2 sm:grid-cols-2 md:grid-cols-3">
               {searchResults.length > 0 ? searchResults.map((it) => (
                 <div key={it.id} className="flex items-center gap-2 rounded border p-2 hover:bg-accent/50">
-                  {it.image_url ? (
-                    <img src={it.image_url} alt={it.name} className="h-12 w-12 rounded object-cover" />
-                  ) : (
-                    <div className="h-12 w-12 rounded bg-muted" />
-                  )}
+                  <ItemImage
+                    src={it.image_url}
+                    alt={it.name}
+                    className="h-12 w-12 rounded object-cover"
+                    fallbackClassName="h-12 w-12 rounded bg-muted"
+                  />
                   <div className="flex-1">
                     <p className="line-clamp-1 text-sm font-medium" title={it.name}>{it.name}</p>
                     <p className="text-xs text-muted-foreground capitalize">{it.category}</p>
@@ -258,11 +261,12 @@ const OutfitBuilder = () => {
                     onClick={() => addItemDirect(it)}
                     className="relative h-14 w-14 overflow-hidden rounded border border-border/40 hover:ring-2 hover:ring-primary/40"
                   >
-                    {it.image_url ? (
-                      <img src={it.image_url} alt={it.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="h-full w-full bg-muted" />
-                    )}
+                    <ItemImage
+                      src={it.image_url}
+                      alt={it.name}
+                      className="h-full w-full object-cover"
+                      fallbackClassName="h-full w-full bg-muted"
+                    />
                   </button>
                 )))}
               </div>
@@ -320,15 +324,12 @@ const OutfitBuilder = () => {
                 <span className="w-28 shrink-0 text-sm font-medium">{c.label}</span>
                 {current ? (
                   <div className="flex items-center gap-2 overflow-hidden">
-                    {current.image_url ? (
-                      <img
-                        src={current.image_url}
-                        alt={current.name}
-                        className="h-20 w-20 rounded object-cover"
-                      />
-                    ) : (
-                      <div className="h-20 w-20 rounded bg-muted" />
-                    )}
+                    <ItemImage
+                      src={current.image_url}
+                      alt={current.name}
+                      className="h-20 w-20 rounded object-cover"
+                      fallbackClassName="h-20 w-20 rounded bg-muted"
+                    />
                     <span className="truncate text-sm">{current.name}</span>
                   </div>
                 ) : (
@@ -359,11 +360,12 @@ const OutfitBuilder = () => {
                 <div className="flex gap-1 overflow-x-auto">
                   {selectedList.map((it) => (
                     <div key={it.id} className="relative h-12 w-12 shrink-0 rounded">
-                      {it.image_url ? (
-                        <img src={it.image_url} alt={it.name} className="h-full w-full rounded object-cover" />
-                      ) : (
-                        <div className="h-full w-full rounded bg-muted" />
-                      )}
+                      <ItemImage
+                        src={it.image_url}
+                        alt={it.name}
+                        className="h-full w-full rounded object-cover"
+                        fallbackClassName="h-full w-full rounded bg-muted"
+                      />
                       <button
                         type="button"
                         onClick={() => setSelectedByCat((prev) => ({

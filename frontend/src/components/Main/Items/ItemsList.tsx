@@ -9,6 +9,7 @@ import { Badge } from '../../ui/badge'
 import { Search, Filter, Heart, ShoppingBag } from 'lucide-react'
 import { useFavorites } from '../../../context/FavoritesContext'
 import ImageCarousel from '../../common/ImageCarousel'
+import ItemImage from '../../common/ItemImage'
 import { CATEGORY_LABELS } from '../../../constants'
 
 interface Item {
@@ -147,16 +148,13 @@ const ItemsList = () => {
                   <div className="relative aspect-[3/4] overflow-hidden">
                     {item.image_urls && item.image_urls.length > 0 ? (
                       <ImageCarousel images={item.image_urls} className="transition-transform duration-500 group-hover:scale-105" />
-                    ) : item.image_url ? (
-                      <img
+                    ) : (
+                      <ItemImage
                         src={item.image_url}
                         alt={item.name}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        fallbackClassName="h-full w-full"
                       />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-muted">
-                        <ShoppingBag className="h-12 w-12 text-muted-foreground" />
-                      </div>
                     )}
                     <div className="absolute top-3 right-3 opacity-0 transition-opacity group-hover:opacity-100">
                       <Button

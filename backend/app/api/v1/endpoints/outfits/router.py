@@ -1,16 +1,21 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, status, Query, HTTPException
 from sqlalchemy.orm import Session
+import os
 
 from app.core.database import get_db
 from app.core.security import get_current_user, get_current_user_optional, require_admin
+from app.core.config import get_settings
 from app.db.models.user import User
 from app.db.models.item import Item
+from app.services.image_generation import image_generation_service
 from . import service
-from .schemas import OutfitCreate, OutfitUpdate, OutfitOut, OutfitCommentCreate, OutfitCommentOut
+from .schemas import OutfitCreate, OutfitUpdate, OutfitOut, OutfitCommentCreate, OutfitCommentOut, OutfitImageGenerateRequest, OutfitImageGenerateResponse
 from .service import _smart_determine_category, _calculate_category_match_score, SMART_CATEGORY_SYSTEM
 
 router = APIRouter(prefix="/outfits", tags=["Outfits"])
+
+settings = get_settings()
 
 
 @router.post("/", response_model=OutfitOut, status_code=status.HTTP_201_CREATED)
@@ -274,4 +279,81 @@ async def batch_analyze_items(
     analysis_results["success_rate"] = round((analysis_results["categorization_stats"]["successfully_categorized"] / total) * 100, 1) if total > 0 else 0
     analysis_results["high_confidence_rate"] = round((analysis_results["categorization_stats"]["high_confidence"] / total) * 100, 1) if total > 0 else 0
     
-    return analysis_results 
+    return analysis_results
+
+
+@router.post("/generate-image", response_model=OutfitImageGenerateResponse)
+async def generate_outfit_image(
+    payload: OutfitImageGenerateRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Generate realistic outfit image using image-to-image AI with actual product images."""
+    
+    # Fetch actual item data with local images
+    all_items = []
+    for ids, category in [
+        (payload.top_ids, "top"),
+        (payload.bottom_ids, "bottom"), 
+        (payload.footwear_ids, "footwear"),
+        (payload.accessories_ids, "accessory"),
+        (payload.fragrances_ids, "fragrance"),
+    ]:
+        if ids:
+            items = db.query(Item).filter(Item.id.in_(ids)).all()
+            for item in items:
+                all_items.append({
+                    "name": item.name,
+                    "brand": item.brand,
+                    "color": item.color,
+                    "category": category,
+                    "description": item.description,
+                    "image_url": item.image_url,  # Локальный путь к изображению
+                    "price": item.price
+                })
+
+    if not all_items:
+        raise HTTPException(
+            status_code=400, 
+            detail="No items provided for outfit generation"
+        )
+
+    # Подготавливаем параметры пользователя
+    user_measurements = {}
+    if payload.height or getattr(user, "height", None):
+        user_measurements["height"] = payload.height or user.height
+    if payload.weight or getattr(user, "weight", None):
+        user_measurements["weight"] = payload.weight or user.weight
+
+    # Создаем стилистический промпт на основе брендов и стилей
+    style_parts = []
+    brands = list(set(item["brand"] for item in all_items if item["brand"]))
+    if brands:
+        style_parts.append(f"Premium fashion brands: {', '.join(brands)}")
+    
+    # Добавляем информацию о ценовой категории
+    prices = [item["price"] for item in all_items if item["price"]]
+    if prices:
+        avg_price = sum(prices) / len(prices)
+        if avg_price > 50000:  # Высокая ценовая категория
+            style_parts.append("luxury fashion, high-end styling")
+        elif avg_price > 20000:  # Средняя ценовая категория
+            style_parts.append("premium fashion, elegant styling")
+        else:
+            style_parts.append("contemporary fashion, modern styling")
+    
+    style_prompt = ", ".join(style_parts)
+
+    # Генерируем изображение через наш image-to-image сервис
+    try:
+        image_url = await image_generation_service.generate_outfit_image(
+            product_items=all_items,
+            style_prompt=style_prompt,
+            user_measurements=user_measurements
+        )
+        
+        return {"image_url": image_url}
+        
+    except Exception as e:
+        # В случае ошибки возвращаем placeholder
+        return {"image_url": "https://dummyimage.com/512x1024/eeeeee/000000.png&text=Generation+Error"}

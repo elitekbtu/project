@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 import httpx
 from bs4 import BeautifulSoup
 import aiofiles
+from pathlib import Path
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -126,6 +127,10 @@ class EnhancedLamodaParser:
             'recovery_attempts': 0
         }
 
+        # Создаем папку для сохранения изображений
+        self.images_dir = Path("uploads/items")
+        self.images_dir.mkdir(parents=True, exist_ok=True)
+
     async def _get_session(self) -> httpx.AsyncClient:
         """Получить или создать HTTP сессию"""
         if self.session is None:
@@ -165,7 +170,9 @@ class EnhancedLamodaParser:
             return None
 
     async def parse_catalog(self, query: str, limit: int = 20, page: int = 1) -> List[ParsedProduct]:
-        """Основной метод парсинга каталога"""
+        """Парсинг каталога с автоматическим скачиванием изображений"""
+        start_time = time.time()
+        
         try:
             logger.info(f"🔍 Starting catalog parsing for query: '{query}' (limit: {limit}, page: {page})")
             
@@ -218,7 +225,27 @@ class EnhancedLamodaParser:
                             logger.info(f"✅ Parsed from HTML: {parsed_product.brand} - {parsed_product.name} - {parsed_product.price}₸")
             
             logger.info(f"📈 Successfully parsed {len(products)} products")
-            return products[:limit]
+            
+            # Скачиваем изображения для всех найденных товаров
+            enhanced_products = []
+            for product in products:
+                if product.image_url or product.image_urls:
+                    # Скачиваем изображения
+                    product_dict = {
+                        'sku': product.sku,
+                        'image_url': product.image_url,
+                        'image_urls': product.image_urls
+                    }
+                    
+                    downloaded_data = await self._download_product_images(product_dict)
+                    
+                    # Обновляем продукт с локальными путями
+                    product.image_url = downloaded_data.get('image_url', product.image_url)
+                    product.image_urls = downloaded_data.get('image_urls', product.image_urls)
+                
+                enhanced_products.append(product)
+            
+            return enhanced_products[:limit]
             
         except Exception as e:
             logger.error(f"Catalog parsing error: {e}")
@@ -505,14 +532,22 @@ class EnhancedLamodaParser:
         """Парсинг товара из JSON с улучшенным извлечением изображений"""
         try:
             product_data = {
-                'sku': None,
                 'name': None,
                 'brand': None,
                 'price': None,
                 'old_price': None,
                 'url': None,
                 'image_url': None,
-                'image_urls': []
+                'image_urls': [],
+                'sku': None,
+                'description': None,
+                'category': None,
+                'clothing_type': None,
+                'color': None,
+                'sizes': [],
+                'style': None,
+                'rating': None,
+                'reviews_count': None
             }
             
             # Извлекаем основные данные
@@ -1437,6 +1472,71 @@ class EnhancedLamodaParser:
                 return blocks
         
         return []
+
+    async def _download_image(self, image_url: str, product_sku: str) -> Optional[str]:
+        """Скачивает изображение и сохраняет локально для AI обработки"""
+        try:
+            if not image_url or not product_sku:
+                return None
+                
+            # Создаем уникальное имя файла
+            file_extension = self._get_file_extension(image_url)
+            filename = f"{product_sku}_{int(time.time())}{file_extension}"
+            filepath = self.images_dir / filename
+            
+            # Скачиваем изображение
+            async with httpx.AsyncClient() as client:
+                response = await client.get(image_url, headers=self.headers, timeout=30.0)
+                if response.status_code == 200:
+                    async with aiofiles.open(filepath, 'wb') as f:
+                        await f.write(response.content)
+                    
+                    # Возвращаем относительный путь для сохранения в БД
+                    return f"/uploads/items/{filename}"
+                    
+        except Exception as e:
+            logger.error(f"Error downloading image {image_url}: {e}")
+            return None
+    
+    def _get_file_extension(self, url: str) -> str:
+        """Определяет расширение файла из URL"""
+        parsed = urlparse(url)
+        path = parsed.path.lower()
+        
+        if '.jpg' in path or '.jpeg' in path:
+            return '.jpg'
+        elif '.png' in path:
+            return '.png'
+        elif '.webp' in path:
+            return '.webp'
+        else:
+            return '.jpg'  # По умолчанию
+
+    async def _download_product_images(self, product_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Скачивает все изображения товара для AI обработки"""
+        if not product_data.get('sku'):
+            return product_data
+            
+        sku = product_data['sku']
+        downloaded_urls = []
+        
+        # Скачиваем основное изображение
+        if product_data.get('image_url'):
+            local_url = await self._download_image(product_data['image_url'], sku)
+            if local_url:
+                downloaded_urls.append(local_url)
+                product_data['image_url'] = local_url
+        
+        # Скачиваем дополнительные изображения
+        if product_data.get('image_urls'):
+            for img_url in product_data['image_urls'][:5]:  # Максимум 5 изображений
+                local_url = await self._download_image(img_url, f"{sku}_{len(downloaded_urls)}")
+                if local_url:
+                    downloaded_urls.append(local_url)
+            
+            product_data['image_urls'] = downloaded_urls
+        
+        return product_data
 
 
 # Пример использования

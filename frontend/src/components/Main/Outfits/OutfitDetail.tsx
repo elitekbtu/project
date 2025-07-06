@@ -20,6 +20,7 @@ import RatingStars from '../../common/RatingStars'
 import { useAuth } from '../../../context/AuthContext'
 import { categoryConfig } from './OutfitBuilder'
 import { motion } from 'framer-motion'
+import ItemImage from '../../common/ItemImage'
 
 interface Item {
   id: number
@@ -32,6 +33,7 @@ interface Outfit {
   name: string
   style: string
   description?: string | null
+  ai_generated_image?: string | null
   total_price?: number | null
   owner_id?: number | string
   tops: Item[]
@@ -254,23 +256,40 @@ const OutfitDetail = () => {
           className="w-full md:w-1/2"
         >
           <div className="aspect-[4/5] relative overflow-hidden rounded-xl bg-muted shadow-sm border">
-            <img
-              src="/maneken.jpg"
-              alt="Манекен"
-              className="absolute inset-0 w-full h-full object-contain"
-            />
-            {previewLayers.map((url, idx) => {
-              if (!url) return null
-              return (
+            {outfit.ai_generated_image ? (
+              // Показываем ИИ сгенерированное изображение
+              <>
                 <img
-                  key={idx}
-                  src={url}
-                  alt="layer"
-                  className="absolute inset-0 w-full h-full object-contain"
-                  style={{ zIndex: idx + 1 }}
+                  src={outfit.ai_generated_image}
+                  alt="Сгенерированный образ"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
-              )
-            })}
+                <div className="absolute top-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                  ✨ ИИ образ
+                </div>
+              </>
+            ) : (
+              // Показываем обычный манекен с наложением
+              <>
+                <img
+                  src="/maneken.jpg"
+                  alt="Манекен"
+                  className="absolute inset-0 w-full h-full object-contain"
+                />
+                {previewLayers.map((url, idx) => {
+                  if (!url) return null
+                  return (
+                    <img
+                      key={idx}
+                      src={url}
+                      alt="layer"
+                      className="absolute inset-0 w-full h-full object-contain"
+                      style={{ zIndex: idx + 1 }}
+                    />
+                  )
+                })}
+              </>
+            )}
           </div>
         </motion.div>
 
@@ -355,7 +374,16 @@ const OutfitDetail = () => {
         transition={{ duration: 0.6, delay: 0.2 }}
         className="mb-16"
       >
-        <h2 className="mb-8 text-2xl font-bold tracking-tight">Состав образа</h2>
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold tracking-tight mb-2">
+            {outfit.ai_generated_image ? 'Состав образа' : 'Состав образа'}
+          </h2>
+          {outfit.ai_generated_image && (
+            <p className="text-muted-foreground text-sm">
+              Образ сгенерирован с помощью искусственного интеллекта. Ниже показаны все предметы, из которых состоит образ.
+            </p>
+          )}
+        </div>
         <div className="space-y-12">
           {categories.map((cat) => (
             cat.items.length > 0 && (
@@ -381,17 +409,12 @@ const OutfitDetail = () => {
                       <Card className="group overflow-hidden transition-all hover:shadow-lg border-0 shadow-sm">
                         <Link to={`/items/${item.id}`} className="block">
                           <div className="relative aspect-square overflow-hidden">
-                            {item.image_url ? (
-                              <img
-                                src={item.image_url}
-                                alt={item.name}
-                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center bg-muted">
-                                <ShoppingCart className="h-8 w-8 text-muted-foreground" />
-                              </div>
-                            )}
+                            <ItemImage
+                              src={item.image_url}
+                              alt={item.name}
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              fallbackClassName="flex h-full w-full items-center justify-center bg-muted"
+                            />
                           </div>
                           <CardContent className="p-3">
                             <h4 className="font-medium leading-tight line-clamp-2 text-sm group-hover:text-primary transition-colors" title={item.name}>

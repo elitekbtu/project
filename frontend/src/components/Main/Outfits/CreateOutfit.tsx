@@ -7,24 +7,26 @@ import { Label } from '../../ui/label'
 import { useToast } from '../../ui/use-toast'
 import { listItems } from '../../../api/items'
 import { type ItemOut } from '../../../api/schemas'
-import { createOutfit } from '../../../api/outfits'
+import { createOutfit, generateOutfitImage } from '../../../api/outfits'
 import { categoryConfig } from './OutfitBuilder'
 import { Button } from '../../ui/button'
+import { useAuth } from '../../../context/AuthContext'
 
 interface IndexState {
   [key: string]: number
 }
 
-// Map category key to payload field
+// key (categoryConfig.key) -> payload field
 const idFieldMap: Record<string, string> = {
-  tops: 'top_ids',
-  bottoms: 'bottom_ids',
+  top: 'top_ids',
+  bottom: 'bottom_ids',
   footwear: 'footwear_ids',
-  accessories: 'accessories_ids',
-  fragrances: 'fragrances_ids',
+  accessory: 'accessories_ids',
+  fragrance: 'fragrances_ids',
 }
 
 const CreateOutfit = () => {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
   const [itemsByCat, setItemsByCat] = useState<Record<string, ItemOut[]>>({})
@@ -32,6 +34,8 @@ const CreateOutfit = () => {
   const [selectedByCat, setSelectedByCat] = useState<Record<string, ItemOut[]>>({})
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null)
+  const [generating, setGenerating] = useState(false)
 
   // Form fields
   const [name, setName] = useState('')
@@ -170,6 +174,7 @@ const CreateOutfit = () => {
         name,
         style,
         description,
+        ai_generated_image: generatedImage,  // Сохраняем сгенерированное изображение
         // Убрано поле collection
       }
       categoryConfig.forEach((c) => {
@@ -189,6 +194,38 @@ const CreateOutfit = () => {
       toast({ variant: 'destructive', title: 'Ошибка', description: message })
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  // Generate outfit image via AI
+  const handleGenerateImage = async () => {
+    // Validate at least one selected item
+    const hasAnySelected = categoryConfig.some((c) => (selectedByCat[c.key] || []).length > 0)
+    if (!hasAnySelected) {
+      toast({ variant: 'destructive', title: 'Пустой образ', description: 'Добавьте хотя бы один предмет для генерации.' })
+      return
+    }
+
+    setGenerating(true)
+    try {
+      // Prepare payload for image generation
+      const payload: Record<string, any> = {}
+      categoryConfig.forEach((c) => {
+        const selList = selectedByCat[c.key] || []
+        if (selList.length > 0) {
+          payload[idFieldMap[c.key]] = selList.map((it) => it.id)
+        }
+      })
+      if (user?.height) payload.height = user.height
+      if (user?.weight) payload.weight = user.weight
+
+      const { image_url } = await generateOutfitImage(payload)
+      setGeneratedImage(image_url)
+    } catch (err: any) {
+      console.error(err)
+      toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось сгенерировать образ' })
+    } finally {
+      setGenerating(false)
     }
   }
 
@@ -216,25 +253,16 @@ const CreateOutfit = () => {
             {/* Mannequin Preview */}
             <div className="flex justify-center">
               <div className="relative w-80 h-[520px] border border-gray-200 bg-gray-50">
-                <img 
-                  src="/maneken.jpg" 
-                  alt="Манекен" 
+                <img
+                  src={generatedImage || '/maneken.jpg'}
+                  alt="Манекен"
                   className="absolute inset-0 w-full h-full object-contain"
                 />
-                {categoryConfig.flatMap((c, i) => {
-                  const selList = selectedByCat[c.key] || []
-                  return selList.map((sel, j) => (
-                    sel.image_url ? (
-                      <img 
-                        key={`${c.key}-${sel.id}`} 
-                        src={sel.image_url} 
-                        alt={sel.name} 
-                        className="absolute inset-0 w-full h-full object-contain" 
-                        style={{ zIndex: i + j + 1 }} 
-                      />
-                    ) : null
-                  ))
-                })}
+                {generating && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                    <Loader2 className="h-6 w-6 animate-spin text-black" />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -405,6 +433,41 @@ const CreateOutfit = () => {
                   </div>
                 )
               })}
+            </div>
+
+            {/* Generate Outfit Button */}
+            <div className="text-center space-y-4">
+              <Button 
+                type="button" 
+                onClick={handleGenerateImage} 
+                disabled={generating}
+                className="w-full max-w-xs"
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Генерация образа...
+                  </>
+                ) : (
+                  'Сгенерировать образ'
+                )}
+              </Button>
+              
+              {generatedImage && generatedImage !== '/maneken.jpg' && (
+                <div className="text-sm text-gray-600">
+                  <p>✨ Образ сгенерирован с помощью ИИ</p>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleGenerateImage}
+                    disabled={generating}
+                    className="mt-2"
+                  >
+                    Сгенерировать заново
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 

@@ -10,7 +10,7 @@ API endpoints для управления каталогом товаров:
 """
 
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, status, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, status, HTTPException, Query, BackgroundTasks, Form
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from celery.result import AsyncResult
@@ -19,6 +19,7 @@ import httpx
 import asyncio
 from urllib.parse import unquote
 import logging
+from sqlalchemy.orm import Session
 
 from app.core.security import require_admin, get_current_user
 from app.db.models.user import User
@@ -29,6 +30,10 @@ from app.tasks.catalog_tasks import (
     get_catalog_statistics
 )
 from celery_app import celery_app
+from app.agents.parser_agent import EnhancedLamodaParser
+from app.core.database import get_db
+from app.db.models.item import Item
+from app.db.models.item_image import ItemImage
 
 # Настройка логгера
 logger = logging.getLogger(__name__)
@@ -580,4 +585,78 @@ async def generate_placeholder_image(text: str = "No Image"):
             'Access-Control-Allow-Methods': 'GET',
             'Access-Control-Allow-Headers': '*'
         }
-    ) 
+    )
+
+@router.post("/parse", dependencies=[Depends(require_admin)])
+async def parse_catalog(
+    query: str = Form(...),
+    limit: int = Form(20),
+    page: int = Form(1),
+    db: Session = Depends(get_db)
+):
+    """Parse catalog with automatic image downloading for AI processing."""
+    try:
+        parser = EnhancedLamodaParser()
+        
+        # Parse with image downloading
+        products = await parser.parse_catalog(query, limit, page)
+        
+        # Process and save to database
+        saved_count = 0
+        for product in products:
+            try:
+                # Check if product already exists
+                existing = db.query(Item).filter(Item.sku == product.sku).first()
+                if existing:
+                    continue
+                
+                # Create new item with downloaded images
+                new_item = Item(
+                    sku=product.sku,
+                    name=product.name,
+                    brand=product.brand,
+                    price=product.price,
+                    old_price=product.old_price,
+                    url=product.url,
+                    image_url=product.image_url,
+                    description=product.description,
+                    category=product.category,
+                    clothing_type=product.clothing_type,
+                    color=product.color,
+                    style=product.style,
+                    rating=product.rating,
+                    reviews_count=product.reviews_count
+                )
+                
+                db.add(new_item)
+                saved_count += 1
+                
+                # Save additional images
+                if product.image_urls:
+                    for i, img_url in enumerate(product.image_urls[:5]):  # Max 5 images
+                        item_image = ItemImage(
+                            item_id=new_item.id,
+                            image_url=img_url,
+                            position=i + 1
+                        )
+                        db.add(item_image)
+                
+            except Exception as e:
+                logger.error(f"Error saving product {product.sku}: {e}")
+                continue
+        
+        db.commit()
+        
+        return {
+            "message": f"Successfully parsed and saved {saved_count} products",
+            "total_parsed": len(products),
+            "saved_count": saved_count,
+            "query": query
+        }
+        
+    except Exception as e:
+        logger.error(f"Error parsing catalog: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'parser' in locals():
+            await parser.close() 
