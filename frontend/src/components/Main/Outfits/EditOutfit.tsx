@@ -3,10 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Loader2, X, Search, Save } from 'lucide-react'
 import { Input } from '../../ui/input'
 import { Textarea } from '../../ui/textarea'
-import { Label } from '../../ui/label'
 import { useToast } from '../../ui/use-toast'
 import { listItems, getItem } from '../../../api/items'
-import { type ItemOut } from '../../../api/schemas'
+import { type ItemOut, type OutfitUpdate } from '../../../api/schemas'
 import { getOutfit, updateOutfit } from '../../../api/outfits'
 import { categoryConfig } from './OutfitBuilder'
 import { Button } from '../../ui/button'
@@ -34,18 +33,13 @@ const EditOutfit = () => {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
-  // Form fields
   const [name, setName] = useState('')
   const [style, setStyle] = useState('')
   const [description, setDescription] = useState('')
-  // Убрано поле collection - коллекции больше не используются
 
-  // Search state
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState<ItemOut[]>([])
-  const [searching, setSearching] = useState(false)
 
-  // Total price
   const totalPrice = useMemo(() => {
     let total = 0
     categoryConfig.forEach((c) => {
@@ -57,14 +51,12 @@ const EditOutfit = () => {
     return total
   }, [selectedByCat])
 
-  // Initial load: items lists then outfit data
   useEffect(() => {
     const init = async () => {
       if (!id) return
       try {
         const grouped: Record<string, ItemOut[]> = {}
         const idx: IndexState = {}
-        // Fetch catalog items for each category
         await Promise.all(
           categoryConfig.map(async (c) => {
             const lists = await Promise.all(
@@ -76,12 +68,10 @@ const EditOutfit = () => {
           }),
         )
 
-        // Fetch outfit to edit
         const data = await getOutfit(Number(id))
         setName(data.name)
         setStyle(data.style)
         setDescription(data.description ?? '')
-        // Убрано поле collection
 
         const sel: Record<string, ItemOut[]> = {}
         await Promise.all(
@@ -91,7 +81,6 @@ const EditOutfit = () => {
               sel[c.key] = []
               return
             }
-            // Fetch full item details for selected ids to get price etc.
             const details = await Promise.all(list.map(async (it) => {
               try {
                 const d = await getItem(it.id)
@@ -101,7 +90,6 @@ const EditOutfit = () => {
               }
             }))
             sel[c.key] = details as ItemOut[]
-            // Ensure they exist in overall list
             const existingIds = new Set(grouped[c.key].map((x) => x.id))
             details.forEach((it) => {
               if (!existingIds.has(it.id)) grouped[c.key].unshift(it as ItemOut)
@@ -120,10 +108,8 @@ const EditOutfit = () => {
       }
     }
     init()
-    // Убрано получение коллекций
   }, [id, toast])
 
-  // Search effect
   useEffect(() => {
     const delay = setTimeout(() => {
       const doSearch = async () => {
@@ -131,14 +117,11 @@ const EditOutfit = () => {
           setSearchResults([])
           return
         }
-        setSearching(true)
         try {
           const res = await listItems({ q: query.trim(), limit: 30 })
           setSearchResults(res)
         } catch (err) {
           console.error(err)
-        } finally {
-          setSearching(false)
         }
       }
       doSearch()
@@ -146,7 +129,6 @@ const EditOutfit = () => {
     return () => clearTimeout(delay)
   }, [query])
 
-  // Helpers (cycle items, toggleSelect, addItemDirect) - same as in CreateOutfit
   const cycle = (key: string, dir: 'prev' | 'next') => {
     setIndexByCat((prev) => {
       const list = itemsByCat[key] || []
@@ -186,7 +168,6 @@ const EditOutfit = () => {
       toast({ variant: 'destructive', title: 'Заполните обязательные поля' })
       return
     }
-    // Validate at least one item
     const hasAny = categoryConfig.some((c) => (selectedByCat[c.key] || []).length > 0)
     if (!hasAny) {
       toast({ variant: 'destructive', title: 'Пустой образ', description: 'Добавьте хотя бы один предмет' })
@@ -195,16 +176,16 @@ const EditOutfit = () => {
 
     setSubmitting(true)
     try {
-      const payload: Record<string, any> = {
-        name, style, description,
+      const payload: OutfitUpdate = {
+        name, 
+        style, 
+        description: description || undefined 
       }
       categoryConfig.forEach((c) => {
         const selList = selectedByCat[c.key] || []
-        if (selList.length > 0) {
-          (payload as any)[idFieldMap[c.key]] = selList.map((it) => it.id)
-        }
+        ;(payload as any)[idFieldMap[c.key]] = selList.map((it) => it.id)
       })
-      await updateOutfit(Number(id), payload as any)
+      await updateOutfit(Number(id), payload)
       toast({ title: 'Образ обновлен', description: 'Возвращаемся на страницу образа' })
       navigate(`/outfits/${id}`)
     } catch (err: any) {
@@ -216,180 +197,166 @@ const EditOutfit = () => {
     }
   }
 
-  if (loading) return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
-      <div className="flex items-center gap-3">
-        <Loader2 className="h-5 w-5 animate-spin text-black" />
-        <span className="text-sm text-black">Загрузка...</span>
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="h-6 w-6 animate-spin text-black" />
       </div>
-    </div>
-  )
+    )
+  }
 
-  // ----- JSX identical to CreateOutfit with minor wording changes -----
   return (
-    <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4 py-8">
-        <div className="border-b border-gray-200 pb-6 mb-8">
-          <h1 className="font-display text-3xl font-bold tracking-tight">Редактирование образа</h1>
-        </div>
+    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+      <form onSubmit={handleSubmit} className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Preview Section */}
-          <div className="space-y-8">
-            {/* Mannequin Preview */}
-            <div className="flex justify-center">
-              <div className="relative w-80 h-[520px] border border-gray-200 bg-gray-50">
-                <img src="/maneken.jpg" alt="Манекен" className="absolute inset-0 w-full h-full object-contain" />
-                {categoryConfig.flatMap((c, i) => {
-                  const selList = selectedByCat[c.key] || []
-                  return selList.map((sel, j) => (
-                    sel.image_url ? (
-                      <img
-                        key={`${c.key}-${sel.id}`}
-                        src={sel.image_url}
-                        alt={sel.name}
-                        className="absolute inset-0 w-full h-full object-contain"
-                        style={{ zIndex: i + j + 1 }}
-                      />
-                    ) : null
-                  ))
-                })}
+        <div className="space-y-8">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border">
+            <h2 className="text-xl font-semibold mb-4">Редактирование образа</h2>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Название образа *</label>
+                <Input 
+                  value={name} 
+                  onChange={(e) => setName(e.target.value)} 
+                  placeholder="Введите название"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Стиль *</label>
+                <Input 
+                  value={style} 
+                  onChange={(e) => setStyle(e.target.value)} 
+                  placeholder="Кэжуал, деловой, спортивный..."
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Описание</label>
+                <Textarea 
+                  value={description} 
+                  onChange={(e) => setDescription(e.target.value)} 
+                  placeholder="Добавьте описание образа..."
+                  rows={4}
+                />
               </div>
             </div>
+          </div>
 
-            {/* Price Display */}
-            <div className="text-center py-4 border-t border-gray-200">
-              <div className="text-sm text-muted-foreground mb-1">Примерная стоимость</div>
-              <div className="text-2xl font-bold">
+          <div className="bg-white p-4 rounded-xl border">
+            <div className="flex items-center gap-2 mb-3">
+              <Search className="w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Поиск товара..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <div className="space-y-2 max-h-60 overflow-auto">
+              {searchResults.map((item) => (
+                <div key={item.id} className="flex items-center justify-between p-2 border rounded-md">
+                  <span className="text-sm truncate">{item.name}</span>
+                  <Button size="sm" onClick={() => addItemDirect(item)}>Добавить</Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {categoryConfig.map((c) => {
+            const list = itemsByCat[c.key] || []
+            const current = list[indexByCat[c.key]]
+            const selected = selectedByCat[c.key] || []
+            return (
+              <div key={c.key} className="bg-white p-4 rounded-xl border space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">{c.label}</span>
+                  <span className="text-xs text-muted-foreground">{selected.length} выбрано</span>
+                </div>
+                <div className="flex gap-3 items-center">
+                  <Button onClick={() => cycle(c.key, 'prev')}>‹</Button>
+                  <div className="flex-1">
+                    {current ? (
+                      <div className="text-sm">{current.name}</div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground">Нет предметов</div>
+                    )}
+                  </div>
+                  <Button onClick={() => cycle(c.key, 'next')}>›</Button>
+                  <Button variant="outline" onClick={() => toggleSelect(c.key)}>
+                    {current && selected.some((s) => s.id === current.id) ? 'Убрать' : 'Добавить'}
+                  </Button>
+                </div>
+                {selected.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {selected.map((it) => (
+                      <div key={it.id} className="relative w-10 h-10 border rounded-md">
+                        <img src={it.image_url} alt={it.name} className="w-full h-full object-cover rounded-md" />
+                        <button
+                          onClick={() =>
+                            setSelectedByCat((prev) => ({
+                              ...prev,
+                              [c.key]: prev[c.key].filter((x) => x.id !== it.id),
+                            }))
+                          }
+                          className="absolute -top-1 -right-1 bg-black text-white rounded-full w-4 h-4 text-xs flex items-center justify-center"
+                        >
+                          <X className="w-2 h-2" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="sticky top-6 space-y-6">
+          <div className="bg-white rounded-2xl border shadow-sm p-4 flex flex-col items-center">
+            <div className="w-full aspect-[3/4] bg-gray-100 rounded overflow-hidden relative">
+              <img src="/maneken.jpg" className="object-cover w-full h-full" alt="Манекен" />
+              {categoryConfig.flatMap((c, i) => {
+                const selList = selectedByCat[c.key] || []
+                return selList.map((sel, j) => (
+                  sel.image_url ? (
+                    <img
+                      key={`${c.key}-${sel.id}`}
+                      src={sel.image_url}
+                      alt={sel.name}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      style={{ zIndex: i + j + 1 }}
+                    />
+                  ) : null
+                ))
+              })}
+            </div>
+            <div className="pt-4 text-center">
+              <div className="text-xs text-muted-foreground">Примерная стоимость</div>
+              <div className="text-xl font-bold">
                 {totalPrice > 0 ? `${totalPrice.toLocaleString('ru-RU')} ₽` : '—'}
               </div>
             </div>
-
-            {/* Search */}
-            <div className="space-y-4 border-t border-gray-200 pt-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  placeholder="Поиск товара..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              {searching && <div className="text-sm text-gray-500">Поиск...</div>}
-              {query.trim().length >= 2 && !searching && (
-                <div className="max-h-60 overflow-y-auto grid gap-2 sm:grid-cols-2">
-                  {searchResults.length > 0 ? (
-                    searchResults.map((it) => (
-                      <div key={it.id} className="flex items-center gap-2 border p-2 hover:bg-gray-50">
-                        <div className="h-12 w-12 flex-shrink-0 border border-gray-200 bg-gray-50">
-                          {it.image_url ? <img src={it.image_url} alt={it.name} className="h-full w-full object-cover" /> : <div className="h-full w-full bg-gray-200" />}          
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="truncate text-sm text-black" title={it.name}>{it.name}</div>
-                          {it.category && <div className="text-xs text-gray-500 capitalize">{it.category}</div>}
-                        </div>
-                        <Button type="button" size="sm" onClick={() => addItemDirect(it)} className="shrink-0">
-                          Добавить
-                        </Button>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-gray-400">Ничего не найдено</div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Category Controls */}
-            <div className="space-y-8">
-              {categoryConfig.map((c) => {
-                const list = itemsByCat[c.key] || []
-                const idx = indexByCat[c.key]
-                const current = list[idx]
-                const selectedList = selectedByCat[c.key] || []
-                return (
-                  <div key={c.key} className="border-t border-gray-100 pt-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-sm font-medium uppercase tracking-wider text-foreground">{c.label}</h3>
-                      <div className="text-xs text-gray-500">{selectedList.length > 0 && `${selectedList.length} выбрано`}</div>
-                    </div>
-
-                    {/* Current Item Display */}
-                    <div className="flex items-center gap-4 mb-4">
-                      <button type="button" onClick={() => cycle(c.key, 'prev')} disabled={list.length === 0} className="w-8 h-8 border border-gray-300 hover:border-black disabled:border-gray-200 disabled:text-gray-300 text-black flex items-center justify-center text-lg font-light transition-colors">‹</button>
-
-                      <div className="flex-1 min-h-[80px] border border-gray-200 p-4 flex items-center gap-4">
-                        {current ? (
-                          <>
-                            <div className="w-12 h-12 border border-gray-200 bg-gray-50 flex-shrink-0">
-                              {current.image_url ? <img src={current.image_url} alt={current.name} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-200" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm text-black truncate">{current.name}</div>
-                              {current.price && <div className="text-xs text-gray-500 mt-1">{current.price.toLocaleString('ru-RU')} ₽</div>}
-                            </div>
-                          </>
-                        ) : (
-                          <div className="text-sm text-gray-400">Нет доступных вариантов</div>
-                        )}
-                      </div>
-
-                      <button type="button" onClick={() => cycle(c.key, 'next')} disabled={list.length === 0} className="w-8 h-8 border border-gray-300 hover:border-black disabled:border-gray-200 disabled:text-gray-300 text-black flex items-center justify-center text-lg font-light transition-colors">›</button>
-
-                      <button type="button" onClick={() => toggleSelect(c.key)} disabled={!current} className="px-4 py-2 border border-gray-300 hover:border-black hover:bg-black hover:text-white disabled:border-gray-200 disabled:text-gray-300 text-black text-xs uppercase tracking-wider transition-colors">
-                        {current && selectedList.some((it) => it.id === current.id) ? 'Убрать' : 'Добавить'}
-                      </button>
-                    </div>
-
-                    {/* Selected Items */}
-                    {selectedList.length > 0 && (
-                      <div className="flex gap-2 flex-wrap">
-                        {selectedList.map((it) => (
-                          <div key={it.id} className="relative group">
-                            <div className="w-12 h-12 border border-gray-200 bg-gray-50">
-                              {it.image_url ? <img src={it.image_url} alt={it.name} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-200" />}
-                            </div>
-                            <button type="button" onClick={() => setSelectedByCat((prev) => ({ ...prev, [c.key]: prev[c.key].filter((x) => x.id !== it.id) }))} className="absolute -top-1 -right-1 w-4 h-4 bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-2 h-2" /></button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
           </div>
-
-          {/* Form Section */}
-          <div className="space-y-8">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Название образа *</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Введите название" required className="border-gray-300 focus:border-black focus:ring-0 bg-white text-black placeholder-gray-400" />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="style" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Стиль *</Label>
-                <Input id="style" value={style} onChange={(e) => setStyle(e.target.value)} placeholder="Кэжуал, деловой, спортивный..." required className="border-gray-300 focus:border-black focus:ring-0 bg-white text-black placeholder-gray-400" />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Описание</Label>
-                <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Добавьте описание образа..." rows={4} className="border-gray-300 focus:border-black focus:ring-0 bg-white text-black placeholder-gray-400 resize-none" />
-              </div>
-
-              {/* Убрано поле коллекции - больше не используется в новой системе образов */}
-            </div>
-
-            <div className="pt-8 border-t border-gray-200">
-              <Button type="submit" disabled={submitting} className="w-full uppercase tracking-wider">
-                {submitting ? (<><Loader2 className="w-4 h-4 animate-spin" /> Сохранение...</>) : (<><Save className="w-4 h-4" /> Сохранить изменения</>)}
-              </Button>
-            </div>
-          </div>
-        </form>
-      </div>
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="w-full uppercase tracking-wide text-sm"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Сохранение...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Сохранить изменения
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
     </div>
   )
 }

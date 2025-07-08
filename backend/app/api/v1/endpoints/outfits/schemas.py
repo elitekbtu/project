@@ -72,7 +72,7 @@ class OutfitCommentOut(OutfitCommentCreate):
 
 class VirtualTryOnRequest(BaseModel):
     human_image_url: str
-    outfit_items: List[dict]
+    outfit_items: List[dict]  # Список предметов с полной информацией (id, name, image_url, category, price, brand, color, description)
     user_measurements: Optional[dict] = None
 
 
@@ -80,5 +80,14 @@ class VirtualTryOnResponse(BaseModel):
     result_image_url: str
     success: bool
     message: str
+
+
+class VirtualTryOnProgressResponse(BaseModel):
+    step: int
+    total_steps: int
+    current_item: dict
+    current_image_url: str
+    progress_percentage: float
+    status: str  # "processing", "completed", "error"
 
 

@@ -1,13 +1,12 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2, Save, X, Search } from 'lucide-react'
+import { Loader2, Save, X, Search, Sparkles } from 'lucide-react'
 import { Input } from '../../ui/input'
 import { Textarea } from '../../ui/textarea'
-import { Label } from '../../ui/label'
 import { useToast } from '../../ui/use-toast'
 import { listItems } from '../../../api/items'
-import { type ItemOut } from '../../../api/schemas'
-import { createOutfit } from '../../../api/outfits'
+import { type ItemOut, type OutfitCreate } from '../../../api/schemas'
+import { createOutfit, generateVirtualTryon } from '../../../api/outfits'
 import { categoryConfig } from './OutfitBuilder'
 import { Button } from '../../ui/button'
 
@@ -15,7 +14,6 @@ interface IndexState {
   [key: string]: number
 }
 
-// key (categoryConfig.key) -> payload field
 const idFieldMap: Record<string, string> = {
   top: 'top_ids',
   bottom: 'bottom_ids',
@@ -32,21 +30,16 @@ const CreateOutfit = () => {
   const [selectedByCat, setSelectedByCat] = useState<Record<string, ItemOut[]>>({})
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [generatingTryOn, setGeneratingTryOn] = useState(false)
+  const [tryOnImage, setTryOnImage] = useState<string | null>(null)
 
-
-  // Form fields
   const [name, setName] = useState('')
   const [style, setStyle] = useState('')
   const [description, setDescription] = useState('')
-  // Убрано поле collection - коллекции больше не используются
-  // Убрано - коллекции больше не используются
 
-  // Search state
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState<ItemOut[]>([])
-  const [searching, setSearching] = useState(false)
 
-  // Compute total price of currently selected items
   const totalPrice = useMemo(() => {
     let total = 0
     categoryConfig.forEach((c) => {
@@ -87,10 +80,8 @@ const CreateOutfit = () => {
       }
     }
     fetchAll()
-    // Убрано получение коллекций
   }, [toast])
 
-  // Debounced search effect
   useEffect(() => {
     const delay = setTimeout(() => {
       const doSearch = async () => {
@@ -98,14 +89,11 @@ const CreateOutfit = () => {
           setSearchResults([])
           return
         }
-        setSearching(true)
         try {
           const res = await listItems({ q: query.trim(), limit: 30 })
           setSearchResults(res)
         } catch (err) {
           console.error(err)
-        } finally {
-          setSearching(false)
         }
       }
       doSearch()
@@ -135,7 +123,6 @@ const CreateOutfit = () => {
     })
   }
 
-  // Add item directly from search results
   const addItemDirect = (item: ItemOut) => {
     const conf = categoryConfig.find((c) => c.apiTypes.some((t) => t === (item.category || '')))
     if (!conf) return
@@ -153,7 +140,6 @@ const CreateOutfit = () => {
       return
     }
 
-    // Validate at least one selected item
     const hasAnySelected = categoryConfig.some((c) => (selectedByCat[c.key] || []).length > 0)
     if (!hasAnySelected) {
       toast({
@@ -166,22 +152,16 @@ const CreateOutfit = () => {
 
     setSubmitting(true)
     try {
-      // Prepare payload
-      const payload: Record<string, any> = {
-        name,
-        style,
-        description,
-        // Убрано поле collection
+      const payload: OutfitCreate = { 
+        name, 
+        style, 
+        description: description || undefined 
       }
       categoryConfig.forEach((c) => {
         const selList = selectedByCat[c.key] || []
-        if (selList.length > 0) {
-          (payload as any)[idFieldMap[c.key]] = selList.map((it) => it.id)
-        } else {
-          (payload as any)[idFieldMap[c.key]] = []
-        }
+        ;(payload as any)[idFieldMap[c.key]] = selList.map((it) => it.id)
       })
-      const newOutfit = await createOutfit(payload as any)
+      const newOutfit = await createOutfit(payload)
       toast({ title: 'Образ создан', description: 'Вы перенаправлены на страницу образа' })
       navigate(`/outfits/${newOutfit.id}`)
     } catch (err: any) {
@@ -193,282 +173,260 @@ const CreateOutfit = () => {
     }
   }
 
+  const handleGenerateTryOn = async () => {
+    const hasAnySelected = categoryConfig.some((c) => (selectedByCat[c.key] || []).length > 0)
+    if (!hasAnySelected) {
+      toast({
+        variant: 'destructive',
+        title: 'Нет выбранных предметов',
+        description: 'Добавьте хотя бы один предмет для генерации виртуальной примерки.',
+      })
+      return
+    }
 
+    setGeneratingTryOn(true)
+    try {
+      // Собираем все выбранные предметы
+      const allOutfitItems = categoryConfig.flatMap((c) => {
+        const items = selectedByCat[c.key] || []
+        return items.map(item => ({
+          id: item.id,
+          name: item.name,
+          image_url: item.image_url,
+          category: item.category,
+          price: item.price,
+          brand: item.brand,
+          color: item.color,
+          description: item.description
+        }))
+      })
+
+      // Показываем информацию о том, что будет применено
+      const categoryCounts = categoryConfig.reduce((acc, c) => {
+        acc[c.key] = (selectedByCat[c.key] || []).length
+        return acc
+      }, {} as Record<string, number>)
+      
+      const categoriesWithItems = Object.entries(categoryCounts)
+        .filter(([_, count]) => count > 0)
+        .map(([key, count]) => `${categoryConfig.find(c => c.key === key)?.label}: ${count}`)
+        .join(', ')
+
+      toast({
+        title: 'Начинаем виртуальную примерку',
+        description: `Будет применено по одному предмету из каждой категории: ${categoriesWithItems}`,
+      })
+
+      // Используем дефолтное изображение человека (можно заменить на реальное)
+      const humanImageUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop&crop=face"
+      
+      const result = await generateVirtualTryon({
+        human_image_url: humanImageUrl,
+        outfit_items: allOutfitItems
+      })
+
+      if (result.success) {
+        setTryOnImage(result.result_image_url)
+        toast({ 
+          title: 'Виртуальная примерка готова', 
+          description: 'Образ собран из предметов разных категорий' 
+        })
+      } else {
+        toast({ 
+          variant: 'destructive', 
+          title: 'Ошибка генерации', 
+          description: result.message || 'Не удалось сгенерировать виртуальную примерку' 
+        })
+      }
+    } catch (err: any) {
+      console.error(err)
+      const message = err?.response?.data?.detail || 'Не удалось сгенерировать виртуальную примерку'
+      toast({ variant: 'destructive', title: 'Ошибка', description: message })
+    } finally {
+      setGeneratingTryOn(false)
+    }
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="flex items-center gap-3">
-          <Loader2 className="h-5 w-5 animate-spin text-black" />
-          <span className="text-black text-sm">Загрузка...</span>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="h-6 w-6 animate-spin text-black" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4 py-8">
-        <div className="border-b border-gray-200 pb-6 mb-8">
-          <h1 className="font-display text-3xl font-bold tracking-tight">Создание образа</h1>
-        </div>
+    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+      <form onSubmit={handleSubmit} className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Preview Section */}
-          <div className="space-y-8">
-            {/* Mannequin Preview */}
-            <div className="flex justify-center">
-              <div className="relative w-80 h-[520px] border border-gray-200 bg-gray-50">
-                <img
-                  src="/maneken.jpg"
-                  alt="Манекен"
-                  className="absolute inset-0 w-full h-full object-contain"
-                />
-              </div>
-            </div>
-
-            {/* Price Display */}
-            <div className="text-center py-4 border-t border-gray-200">
-              <div className="text-sm text-muted-foreground mb-1">Примерная стоимость</div>
-              <div className="text-2xl font-bold">
-                {totalPrice > 0 ? `${totalPrice.toLocaleString('ru-RU')} ₽` : '—'}
-              </div>
-            </div>
-
-            {/* Search Section */}
-            <div className="space-y-4 border-t border-gray-200 pt-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  placeholder="Поиск товара..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              {searching && <div className="text-sm text-gray-500">Поиск...</div>}
-              {query.trim().length >= 2 && !searching && (
-                <div className="max-h-60 overflow-y-auto grid gap-2 sm:grid-cols-2">
-                  {searchResults.length > 0 ? searchResults.map((it) => (
-                    <div key={it.id} className="flex items-center gap-2 border p-2 hover:bg-gray-50">
-                      <div className="h-12 w-12 flex-shrink-0 border border-gray-200 bg-gray-50">
-                        {it.image_url ? (
-                          <img
-                            src={it.image_url}
-                            alt={it.name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-full w-full bg-gray-200" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="truncate text-sm text-black" title={it.name}>{it.name}</div>
-                        {it.category && (
-                          <div className="text-xs text-gray-500 capitalize">{it.category}</div>
-                        )}
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => addItemDirect(it)}
-                        className="shrink-0"
-                      >
-                        Добавить
-                      </Button>
-                    </div>
-                  )) : (
-                    <div className="text-sm text-gray-400">Ничего не найдено</div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Category Controls */}
-            <div className="space-y-8">
-              {categoryConfig.map((c) => {
-                const list = itemsByCat[c.key] || []
-                const idx = indexByCat[c.key]
-                const current = list[idx]
-                const selectedList = selectedByCat[c.key] || []
-                
-                return (
-                  <div key={c.key} className="border-t border-gray-100 pt-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-sm font-medium uppercase tracking-wider text-foreground">
-                        {c.label}
-                      </h3>
-                      <div className="text-xs text-gray-500">
-                        {selectedList.length > 0 && `${selectedList.length} выбрано`}
-                      </div>
-                    </div>
-
-                    {/* Current Item Display */}
-                    <div className="flex items-center gap-4 mb-4">
-                      <button
-                        type="button"
-                        onClick={() => cycle(c.key, 'prev')}
-                        disabled={list.length === 0}
-                        className="w-8 h-8 border border-gray-300 hover:border-black disabled:border-gray-200 disabled:text-gray-300 text-black flex items-center justify-center text-lg font-light transition-colors"
-                      >
-                        ‹
-                      </button>
-
-                      <div className="flex-1 min-h-[80px] border border-gray-200 p-4 flex items-center gap-4">
-                        {current ? (
-                          <>
-                            <div className="w-12 h-12 border border-gray-200 bg-gray-50 flex-shrink-0">
-                              {current.image_url ? (
-                                <img 
-                                  src={current.image_url} 
-                                  alt={current.name} 
-                                  className="w-full h-full object-contain"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-gray-200" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm text-black truncate">{current.name}</div>
-                              {current.price && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  {current.price.toLocaleString('ru-RU')} ₽
-                                </div>
-                              )}
-                            </div>
-                          </>
-                        ) : (
-                          <div className="text-sm text-gray-400">Нет доступных вариантов</div>
-                        )}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => cycle(c.key, 'next')}
-                        disabled={list.length === 0}
-                        className="w-8 h-8 border border-gray-300 hover:border-black disabled:border-gray-200 disabled:text-gray-300 text-black flex items-center justify-center text-lg font-light transition-colors"
-                      >
-                        ›
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => toggleSelect(c.key)}
-                        disabled={!current}
-                        className="px-4 py-2 border border-gray-300 hover:border-black hover:bg-black hover:text-white disabled:border-gray-200 disabled:text-gray-300 text-black text-xs uppercase tracking-wider transition-colors"
-                      >
-                        {current && selectedList.some((it) => it.id === current.id) ? 'Убрать' : 'Добавить'}
-                      </button>
-                    </div>
-
-                    {/* Selected Items */}
-                    {selectedList.length > 0 && (
-                      <div className="flex gap-2 flex-wrap">
-                        {selectedList.map((it) => (
-                          <div key={it.id} className="relative group">
-                            <div className="w-12 h-12 border border-gray-200 bg-gray-50">
-                              {it.image_url ? (
-                                <img 
-                                  src={it.image_url} 
-                                  alt={it.name} 
-                                  className="w-full h-full object-contain"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-gray-200" />
-                              )}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedByCat((prev) => ({
-                                ...prev,
-                                [c.key]: prev[c.key].filter((x) => x.id !== it.id),
-                              }))}
-                              className="absolute -top-1 -right-1 w-4 h-4 bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="w-2 h-2" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-
-
-          </div>
-
-          {/* Form Section */}
-          <div className="space-y-8">
-            <div className="space-y-6">
+        <div className="space-y-8">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border">
+            <h2 className="text-xl font-semibold mb-4">Создание образа</h2>
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Название образа *
-                </Label>
+                <label className="text-sm font-medium">Название образа *</label>
                 <Input 
-                  id="name" 
                   value={name} 
                   onChange={(e) => setName(e.target.value)} 
                   placeholder="Введите название"
                   required
-                  className="border-gray-300 focus:border-black focus:ring-0 bg-white text-black placeholder-gray-400"
                 />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="style" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Стиль *
-                </Label>
+                <label className="text-sm font-medium">Стиль *</label>
                 <Input 
-                  id="style" 
                   value={style} 
                   onChange={(e) => setStyle(e.target.value)} 
                   placeholder="Кэжуал, деловой, спортивный..."
                   required
-                  className="border-gray-300 focus:border-black focus:ring-0 bg-white text-black placeholder-gray-400"
                 />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Описание
-                </Label>
+                <label className="text-sm font-medium">Описание</label>
                 <Textarea 
-                  id="description" 
                   value={description} 
                   onChange={(e) => setDescription(e.target.value)} 
                   placeholder="Добавьте описание образа..."
                   rows={4}
-                  className="border-gray-300 focus:border-black focus:ring-0 bg-white text-black placeholder-gray-400 resize-none"
                 />
               </div>
-
-              {/* Убрано поле коллекции - больше не используется в новой системе образов */}
             </div>
+          </div>
 
-            <div className="pt-8 border-t border-gray-200">
+          <div className="bg-white p-4 rounded-xl border">
+            <div className="flex items-center gap-2 mb-3">
+              <Search className="w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Поиск товара..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <div className="space-y-2 max-h-60 overflow-auto">
+              {searchResults.map((item) => (
+                <div key={item.id} className="flex items-center justify-between p-2 border rounded-md">
+                  <span className="text-sm truncate">{item.name}</span>
+                  <Button size="sm" onClick={() => addItemDirect(item)}>Добавить</Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {categoryConfig.map((c) => {
+            const list = itemsByCat[c.key] || []
+            const current = list[indexByCat[c.key]]
+            const selected = selectedByCat[c.key] || []
+            return (
+              <div key={c.key} className="bg-white p-4 rounded-xl border space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">{c.label}</span>
+                  <span className="text-xs text-muted-foreground">{selected.length} выбрано</span>
+                </div>
+                <div className="flex gap-3 items-center">
+                  <Button onClick={() => cycle(c.key, 'prev')}>‹</Button>
+                  <div className="flex-1">
+                    {current ? (
+                      <div className="text-sm">{current.name}</div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground">Нет предметов</div>
+                    )}
+                  </div>
+                  <Button onClick={() => cycle(c.key, 'next')}>›</Button>
+                  <Button variant="outline" onClick={() => toggleSelect(c.key)}>
+                    {current && selected.some((s) => s.id === current.id) ? 'Убрать' : 'Добавить'}
+                  </Button>
+                </div>
+                {selected.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {selected.map((it) => (
+                      <div key={it.id} className="relative w-10 h-10 border rounded-md">
+                        <img src={it.image_url} alt={it.name} className="w-full h-full object-cover rounded-md" />
+                        <button
+                          onClick={() =>
+                            setSelectedByCat((prev) => ({
+                              ...prev,
+                              [c.key]: prev[c.key].filter((x) => x.id !== it.id),
+                            }))
+                          }
+                          className="absolute -top-1 -right-1 bg-black text-white rounded-full w-4 h-4 text-xs flex items-center justify-center"
+                        >
+                          <X className="w-2 h-2" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="sticky top-6 space-y-6">
+          <div className="bg-white rounded-2xl border shadow-sm p-4 flex flex-col items-center">
+            <div className="w-full aspect-[3/4] bg-gray-100 rounded overflow-hidden relative">
+              {tryOnImage ? (
+                <img src={tryOnImage} className="object-cover w-full h-full" alt="Виртуальная примерка" />
+              ) : (
+                <img src="/maneken.jpg" className="object-cover w-full h-full" alt="Манекен" />
+              )}
+            </div>
+            <div className="pt-4 text-center space-y-3">
+              <div className="text-xs text-muted-foreground">Примерная стоимость</div>
+              <div className="text-xl font-bold">
+                {totalPrice > 0 ? `${totalPrice.toLocaleString('ru-RU')} ₽` : '—'}
+              </div>
+              
               <Button
-                type="submit"
-                disabled={submitting}
-                className="w-full uppercase tracking-wider"
+                onClick={handleGenerateTryOn}
+                disabled={generatingTryOn}
+                variant="default"
+                size="sm"
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
               >
-                {submitting ? (
+                {generatingTryOn ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Сохранение...
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Сборка образа...
                   </>
                 ) : (
                   <>
-                    <Save className="w-4 h-4" />
-                    Создать образ
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Собрать образ
                   </>
                 )}
               </Button>
+              {!categoryConfig.some((c) => (selectedByCat[c.key] || []).length > 0) && (
+                <div className="text-xs text-muted-foreground text-center">
+                  Добавьте предметы для активации
+                </div>
+              )}
+              {categoryConfig.some((c) => (selectedByCat[c.key] || []).length > 0) && (
+                <div className="text-xs text-muted-foreground text-center">
+                  Будет применено по одному предмету из каждой категории
+                </div>
+              )}
             </div>
           </div>
-        </form>
-      </div>
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="w-full uppercase tracking-wide text-sm"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Сохранение...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Создать образ
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
     </div>
   )
 }

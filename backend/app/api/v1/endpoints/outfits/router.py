@@ -290,19 +290,46 @@ async def generate_virtual_tryon(
     user: User = Depends(get_current_user)
 ):
     """
-    Генерирует виртуальную примерку образа на основе фотографии пользователя и выбранных элементов одежды
+    Генерирует виртуальную примерку образа на основе фотографии пользователя и выбранных элементов одежды.
+    Применяет по одному предмету из каждой категории для создания полного образа.
     """
     try:
+        # Логируем информацию о запросе
+        category_counts = {}
+        for item in request.outfit_items:
+            category = item.get('category', 'unknown')
+            category_counts[category] = category_counts.get(category, 0) + 1
+        
+        logger.info(f"🎯 Запрос виртуальной примерки от пользователя {user.id}")
+        logger.info(f"📊 Предметы по категориям: {category_counts}")
+        logger.info(f"📸 Исходное изображение: {request.human_image_url}")
+        
         result_image_url = await virtual_tryon_service.generate_virtual_tryon_outfit(
             human_image_url=request.human_image_url,
             outfit_items=request.outfit_items,
             user_measurements=request.user_measurements
         )
         
+        # Формируем сообщение с информацией о примененных предметах
+        applied_categories = set()
+        for item in request.outfit_items:
+            if item.get('category') in ['top', 'bottom', 'footwear', 'accessory']:
+                applied_categories.add(item.get('category'))
+        
+        category_names = {
+            'top': 'верх',
+            'bottom': 'низ', 
+            'footwear': 'обувь',
+            'accessory': 'аксессуары'
+        }
+        
+        applied_names = [category_names.get(cat, cat) for cat in applied_categories]
+        message = f"Образ собран из {len(applied_categories)} категорий: {', '.join(applied_names)}"
+        
         return VirtualTryOnResponse(
             result_image_url=result_image_url,
             success=True,
-            message="Виртуальная примерка успешно сгенерирована"
+            message=message
         )
         
     except Exception as e:

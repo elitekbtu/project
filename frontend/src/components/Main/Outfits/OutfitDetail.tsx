@@ -246,7 +246,7 @@ const OutfitDetail = () => {
       </motion.div>
 
       {/* Main outfit section */}
-      <div className="mb-16 flex flex-col md:flex-row gap-8 md:gap-12">
+      <div className="mb-16 flex flex-col gap-8 md:flex-row md:gap-12">
         {/* Outfit preview */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -288,15 +288,15 @@ const OutfitDetail = () => {
             </Badge>
           </div>
 
-          <h1 className="mb-2 text-3xl font-bold tracking-tight">{outfit.name}</h1>
+          <h1 className="mb-2 text-2xl sm:text-3xl font-bold tracking-tight">{outfit.name}</h1>
           
           <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-md bg-muted/80 p-2.5 border border-border/50">
+            <div className="rounded-md bg-muted/80 p-2 sm:p-2.5 border border-border/50">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Стиль</p>
               <p className="text-sm font-medium leading-tight">{outfit.style}</p>
             </div>
             {outfit.total_price && (
-              <div className="rounded-md bg-muted/80 p-2.5 border border-border/50">
+              <div className="rounded-md bg-muted/80 p-2 sm:p-2.5 border border-border/50">
                 <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Стоимость</p>
                 <p className="text-sm font-medium leading-tight">{outfit.total_price.toLocaleString('ru-RU')} ₽</p>
               </div>
@@ -305,15 +305,15 @@ const OutfitDetail = () => {
 
           {outfit.description && (
             <div className="mb-6">
-              <h3 className="mb-2 font-medium">Описание</h3>
-              <p className="text-muted-foreground leading-relaxed">{outfit.description}</p>
+              <h3 className="mb-2 font-medium text-base sm:text-lg">Описание</h3>
+              <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">{outfit.description}</p>
             </div>
           )}
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button
               size="lg"
-              className="flex-1 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+              className="flex-1 rounded-lg shadow-sm hover:shadow-md transition-shadow w-full sm:w-auto"
               disabled={adding}
               onClick={handleAddToCart}
             >
@@ -324,7 +324,7 @@ const OutfitDetail = () => {
             <Button
               size="lg"
               variant={favorited ? "default" : "outline"}
-              className="rounded-lg px-3 shadow-sm hover:shadow-md transition-shadow"
+              className="rounded-lg px-3 shadow-sm hover:shadow-md transition-shadow w-full sm:w-auto"
               onClick={handleToggleFavorite}
             >
               <Heart 
@@ -338,7 +338,7 @@ const OutfitDetail = () => {
                 asChild 
                 size="lg"
                 variant="outline" 
-                className="rounded-lg px-3 shadow-sm hover:shadow-md transition-shadow"
+                className="rounded-lg px-3 shadow-sm hover:shadow-md transition-shadow w-full sm:w-auto"
               >
                 <Link to={`/outfits/${outfit.id}/edit`}>
                   <Pencil className="h-4 w-4" />
@@ -371,7 +371,7 @@ const OutfitDetail = () => {
                 transition={{ duration: 0.4 }}
                 className="space-y-6"
               >
-                <h3 className="text-lg font-medium text-foreground uppercase tracking-wider border-l-4 border-primary pl-4">
+                <h3 className="text-base sm:text-lg font-medium text-foreground uppercase tracking-wider border-l-4 border-primary pl-4">
                   {cat.label}
                 </h3>
                 
@@ -383,7 +383,7 @@ const OutfitDetail = () => {
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <Card className="group overflow-hidden transition-all hover:shadow-lg border-0 shadow-sm">
+                      <Card className="group overflow-hidden transition-all hover:shadow-lg border-0 shadow-sm rounded-lg">
                         <Link to={`/items/${item.id}`} className="block">
                           <div className="relative aspect-square overflow-hidden">
                             <ItemImage
@@ -393,8 +393,8 @@ const OutfitDetail = () => {
                               fallbackClassName="flex h-full w-full items-center justify-center bg-muted"
                             />
                           </div>
-                          <CardContent className="p-3">
-                            <h4 className="font-medium leading-tight line-clamp-2 text-sm group-hover:text-primary transition-colors" title={item.name}>
+                          <CardContent className="p-2 sm:p-3">
+                            <h4 className="font-medium leading-tight line-clamp-2 text-xs sm:text-sm group-hover:text-primary transition-colors" title={item.name}>
                               {item.name}
                             </h4>
                           </CardContent>

@@ -151,11 +151,11 @@ const OutfitsList = () => {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
         >
           {outfits.map((o) => (
             <motion.div key={o.id} variants={itemVariants}>
-              <Card className="group overflow-hidden transition-all hover:shadow-lg">
+              <Card className="group overflow-hidden transition-all hover:shadow-lg rounded-lg">
                 <Link to={`/outfits/${o.id}`}>
                   <div className="relative aspect-[3/4] overflow-hidden">
                     {o.image_url ? (
@@ -170,11 +170,11 @@ const OutfitsList = () => {
                       </div>
                     )}
                   </div>
-                  <CardContent className="p-4 space-y-1">
-                    <h3 className="font-medium leading-tight" title={o.name}>{o.name}</h3>
-                    <p className="text-sm text-muted-foreground">Стиль: {o.style}</p>
+                  <CardContent className="p-3 sm:p-4 space-y-1">
+                    <h3 className="font-medium leading-tight text-base sm:text-lg" title={o.name}>{o.name}</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Стиль: {o.style}</p>
                     {o.total_price && (
-                      <p className="font-semibold">{o.total_price.toLocaleString()} ₸</p>
+                      <p className="font-semibold text-sm sm:text-base">{o.total_price.toLocaleString()} ₸</p>
                     )}
                   </CardContent>
                 </Link>
