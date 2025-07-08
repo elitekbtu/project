@@ -156,8 +156,11 @@ class VirtualTryOnService:
             
             # Преобразуем относительный путь в полный URL если нужно
             if garment_image_url.startswith('/uploads/'):
-                # Для локального тестирования используем localhost
-                full_garment_url = f"http://localhost{garment_image_url}"
+                # Используем домен из настроек
+                from app.core.config import get_settings
+                settings = get_settings()
+                domain = "https://trc.works"  # Используем основной домен
+                full_garment_url = f"{domain}{garment_image_url}"
                 logger.info(f"🔄 Преобразован относительный путь: {garment_image_url} → {full_garment_url}")
             else:
                 full_garment_url = garment_image_url

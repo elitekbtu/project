@@ -28,9 +28,9 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, className = '', a
     setPage([page + newDir, newDir])
   }
 
-  // Convert image URLs to use local server if they start with /uploads/
+  // Convert image URLs to use current domain if they start with /uploads/
   const processedImages = images.map(img => 
-    img.startsWith('/uploads/') ? `http://localhost:8000${img}` : img
+    img.startsWith('/uploads/') ? `${window.location.origin}${img}` : img
   )
 
   return (

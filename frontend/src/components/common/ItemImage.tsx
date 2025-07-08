@@ -16,9 +16,9 @@ const ItemImage: React.FC<ItemImageProps> = ({
   fallbackClassName = "",
   style 
 }) => {
-  // Если изображение начинается с /uploads/, используем локальный сервер
+  // Если изображение начинается с /uploads/, используем текущий домен
   const imageUrl = src?.startsWith('/uploads/') 
-    ? `http://localhost:8000${src}` 
+    ? `${window.location.origin}${src}` 
     : src
 
   if (!imageUrl) {
