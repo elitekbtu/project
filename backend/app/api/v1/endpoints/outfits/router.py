@@ -2,6 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, status, Query, HTTPException
 from sqlalchemy.orm import Session
 import os
+import logging
 
 from app.core.database import get_db
 from app.core.security import get_current_user, get_current_user_optional, require_admin
@@ -10,12 +11,14 @@ from app.db.models.user import User
 from app.db.models.item import Item
 
 from . import service
-from .schemas import OutfitCreate, OutfitUpdate, OutfitOut, OutfitCommentCreate, OutfitCommentOut
+from .schemas import OutfitCreate, OutfitUpdate, OutfitOut, OutfitCommentCreate, OutfitCommentOut, VirtualTryOnRequest, VirtualTryOnResponse
 from .service import _smart_determine_category, _calculate_category_match_score, SMART_CATEGORY_SYSTEM
+from app.services.virtual_tryon import virtual_tryon_service
 
 router = APIRouter(prefix="/outfits", tags=["Outfits"])
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/", response_model=OutfitOut, status_code=status.HTTP_201_CREATED)
@@ -120,7 +123,6 @@ async def analyze_item_categorization(
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     
-    # Получаем все текстовые данные о товаре
     item_texts = []
     if item.name:
         item_texts.append(f"Name: {item.name}")
@@ -143,7 +145,6 @@ async def analyze_item_categorization(
             "keywords_matched": []
         }
         
-        # Находим совпавшие ключевые слова
         item_text_lower = combined_text.lower()
         for keyword in category_data["keywords"]:
             if keyword.lower() in item_text_lower:
@@ -280,5 +281,36 @@ async def batch_analyze_items(
     analysis_results["high_confidence_rate"] = round((analysis_results["categorization_stats"]["high_confidence"] / total) * 100, 1) if total > 0 else 0
     
     return analysis_results
+
+
+@router.post("/virtual-tryon", response_model=VirtualTryOnResponse)
+async def generate_virtual_tryon(
+    request: VirtualTryOnRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """
+    Генерирует виртуальную примерку образа на основе фотографии пользователя и выбранных элементов одежды
+    """
+    try:
+        result_image_url = await virtual_tryon_service.generate_virtual_tryon_outfit(
+            human_image_url=request.human_image_url,
+            outfit_items=request.outfit_items,
+            user_measurements=request.user_measurements
+        )
+        
+        return VirtualTryOnResponse(
+            result_image_url=result_image_url,
+            success=True,
+            message="Виртуальная примерка успешно сгенерирована"
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка виртуальной примерки: {e}")
+        return VirtualTryOnResponse(
+            result_image_url=request.human_image_url,
+            success=False,
+            message=f"Ошибка при генерации виртуальной примерки: {str(e)}"
+        )
 
 

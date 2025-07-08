@@ -17,7 +17,8 @@ class VirtualTryOnService:
     
     def __init__(self):
         self.replicate_api_key = os.getenv("REPLICATE_API_TOKEN")
-        self.model_id = "cuuupid/idm-vton:0513734a452173b8173e907e3a59d19a36266e55b21c7d7e985"
+        self.model_id = "cuuupid/idm-vton:0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985"
+        self.fallback_model_id = "cuuupid/idm-vton:latest"
         self.output_path = Path("uploads/virtual_tryon")
         self.output_path.mkdir(parents=True, exist_ok=True)
         

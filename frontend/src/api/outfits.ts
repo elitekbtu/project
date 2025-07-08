@@ -5,6 +5,8 @@ import {
   type OutfitCreate,
   type OutfitOut,
   type OutfitUpdate,
+  type VirtualTryOnRequest,
+  type VirtualTryOnResponse,
 } from './schemas'
 
 export interface ListOutfitsParams {
@@ -91,5 +93,12 @@ export const likeOutfitComment = async (outfitId: number, commentId: number) => 
 
 export const deleteOutfitComment = async (outfitId: number, commentId: number) => {
   await api.delete(`/api/outfits/${outfitId}/comments/${commentId}`)
+}
+
+// ---------- Virtual Tryon ----------
+
+export const generateVirtualTryon = async (data: VirtualTryOnRequest) => {
+  const resp = await api.post<VirtualTryOnResponse>('/api/outfits/virtual-tryon', data)
+  return resp.data
 }
 

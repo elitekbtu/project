@@ -232,4 +232,17 @@ export interface Body_create_item_api_items__post {
   images?: File[];
   image_url?: string;
   clothing_type?: string;
+}
+
+// Virtual Tryon types
+export interface VirtualTryOnRequest {
+  human_image_url: string;
+  outfit_items: any[];
+  user_measurements?: any;
+}
+
+export interface VirtualTryOnResponse {
+  result_image_url: string;
+  success: boolean;
+  message: string;
 } 
