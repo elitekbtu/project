@@ -352,3 +352,4 @@ class VirtualTryOnService:
             return self._generate_mock_result(step_number, item)
 
 # Создаем единственный экземпляр сервиса
+virtual_tryon_service = VirtualTryOnService()
