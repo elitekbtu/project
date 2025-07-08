@@ -93,19 +93,3 @@ export const deleteOutfitComment = async (outfitId: number, commentId: number) =
   await api.delete(`/api/outfits/${outfitId}/comments/${commentId}`)
 }
 
-// ---------- AI Outfit Image Generation ----------
-
-export interface OutfitImageGeneratePayload {
-  top_ids?: number[]
-  bottom_ids?: number[]
-  footwear_ids?: number[]
-  accessories_ids?: number[]
-  fragrances_ids?: number[]
-  height?: number
-  weight?: number
-}
-
-export const generateOutfitImage = async (data: OutfitImageGeneratePayload) => {
-  const resp = await api.post<{ image_url: string }>('/api/outfits/generate-image', data)
-  return resp.data
-}

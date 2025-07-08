@@ -7,7 +7,7 @@ import { Label } from '../../ui/label'
 import { useToast } from '../../ui/use-toast'
 import { listItems } from '../../../api/items'
 import { type ItemOut } from '../../../api/schemas'
-import { createOutfit, generateOutfitImage } from '../../../api/outfits'
+import { createOutfit } from '../../../api/outfits'
 import { categoryConfig } from './OutfitBuilder'
 import { Button } from '../../ui/button'
 import { useAuth } from '../../../context/AuthContext'
@@ -34,8 +34,7 @@ const CreateOutfit = () => {
   const [selectedByCat, setSelectedByCat] = useState<Record<string, ItemOut[]>>({})
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null)
-  const [generating, setGenerating] = useState(false)
+
 
   // Form fields
   const [name, setName] = useState('')
@@ -174,7 +173,6 @@ const CreateOutfit = () => {
         name,
         style,
         description,
-        ai_generated_image: generatedImage,  // Сохраняем сгенерированное изображение
         // Убрано поле collection
       }
       categoryConfig.forEach((c) => {
@@ -197,37 +195,7 @@ const CreateOutfit = () => {
     }
   }
 
-  // Generate outfit image via AI
-  const handleGenerateImage = async () => {
-    // Validate at least one selected item
-    const hasAnySelected = categoryConfig.some((c) => (selectedByCat[c.key] || []).length > 0)
-    if (!hasAnySelected) {
-      toast({ variant: 'destructive', title: 'Пустой образ', description: 'Добавьте хотя бы один предмет для генерации.' })
-      return
-    }
 
-    setGenerating(true)
-    try {
-      // Prepare payload for image generation
-      const payload: Record<string, any> = {}
-      categoryConfig.forEach((c) => {
-        const selList = selectedByCat[c.key] || []
-        if (selList.length > 0) {
-          payload[idFieldMap[c.key]] = selList.map((it) => it.id)
-        }
-      })
-      if (user?.height) payload.height = user.height
-      if (user?.weight) payload.weight = user.weight
-
-      const { image_url } = await generateOutfitImage(payload)
-      setGeneratedImage(image_url)
-    } catch (err: any) {
-      console.error(err)
-      toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось сгенерировать образ' })
-    } finally {
-      setGenerating(false)
-    }
-  }
 
   if (loading) {
     return (
@@ -254,15 +222,10 @@ const CreateOutfit = () => {
             <div className="flex justify-center">
               <div className="relative w-80 h-[520px] border border-gray-200 bg-gray-50">
                 <img
-                  src={generatedImage || '/maneken.jpg'}
+                  src="/maneken.jpg"
                   alt="Манекен"
                   className="absolute inset-0 w-full h-full object-contain"
                 />
-                {generating && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/70">
-                    <Loader2 className="h-6 w-6 animate-spin text-black" />
-                  </div>
-                )}
               </div>
             </div>
 
@@ -435,40 +398,7 @@ const CreateOutfit = () => {
               })}
             </div>
 
-            {/* Generate Outfit Button */}
-            <div className="text-center space-y-4">
-              <Button 
-                type="button" 
-                onClick={handleGenerateImage} 
-                disabled={generating}
-                className="w-full max-w-xs"
-              >
-                {generating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Генерация образа...
-                  </>
-                ) : (
-                  'Сгенерировать образ'
-                )}
-              </Button>
-              
-              {generatedImage && generatedImage !== '/maneken.jpg' && (
-                <div className="text-sm text-gray-600">
-                  <p>✨ Образ сгенерирован с помощью ИИ</p>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleGenerateImage}
-                    disabled={generating}
-                    className="mt-2"
-                  >
-                    Сгенерировать заново
-                  </Button>
-                </div>
-              )}
-            </div>
+
           </div>
 
           {/* Form Section */}

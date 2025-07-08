@@ -21,7 +21,6 @@ class Outfit(Base):
     name = Column(String(100), nullable=False, index=True)
     style = Column(String(50), nullable=False, index=True)
     description = Column(Text, nullable=True)
-    ai_generated_image = Column(String(500), nullable=True)  # URL сгенерированного ИИ изображения
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

@@ -33,7 +33,6 @@ interface Outfit {
   name: string
   style: string
   description?: string | null
-  ai_generated_image?: string | null
   total_price?: number | null
   owner_id?: number | string
   tops: Item[]
@@ -256,40 +255,23 @@ const OutfitDetail = () => {
           className="w-full md:w-1/2"
         >
           <div className="aspect-[4/5] relative overflow-hidden rounded-xl bg-muted shadow-sm border">
-            {outfit.ai_generated_image ? (
-              // Показываем ИИ сгенерированное изображение
-              <>
+            <img
+              src="/maneken.jpg"
+              alt="Манекен"
+              className="absolute inset-0 w-full h-full object-contain"
+            />
+            {previewLayers.map((url, idx) => {
+              if (!url) return null
+              return (
                 <img
-                  src={outfit.ai_generated_image}
-                  alt="Сгенерированный образ"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                <div className="absolute top-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-xs">
-                  ✨ ИИ образ
-                </div>
-              </>
-            ) : (
-              // Показываем обычный манекен с наложением
-              <>
-                <img
-                  src="/maneken.jpg"
-                  alt="Манекен"
+                  key={idx}
+                  src={url}
+                  alt="layer"
                   className="absolute inset-0 w-full h-full object-contain"
+                  style={{ zIndex: idx + 1 }}
                 />
-                {previewLayers.map((url, idx) => {
-                  if (!url) return null
-                  return (
-                    <img
-                      key={idx}
-                      src={url}
-                      alt="layer"
-                      className="absolute inset-0 w-full h-full object-contain"
-                      style={{ zIndex: idx + 1 }}
-                    />
-                  )
-                })}
-              </>
-            )}
+              )
+            })}
           </div>
         </motion.div>
 
@@ -376,13 +358,8 @@ const OutfitDetail = () => {
       >
         <div className="mb-8">
           <h2 className="text-2xl font-bold tracking-tight mb-2">
-            {outfit.ai_generated_image ? 'Состав образа' : 'Состав образа'}
+            Состав образа
           </h2>
-          {outfit.ai_generated_image && (
-            <p className="text-muted-foreground text-sm">
-              Образ сгенерирован с помощью искусственного интеллекта. Ниже показаны все предметы, из которых состоит образ.
-            </p>
-          )}
         </div>
         <div className="space-y-12">
           {categories.map((cat) => (
