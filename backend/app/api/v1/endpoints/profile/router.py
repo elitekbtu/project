@@ -43,4 +43,15 @@ async def upload_avatar(
 
 @router.delete("/avatar", status_code=status.HTTP_204_NO_CONTENT)
 def delete_avatar(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return service.delete_avatar(db, user) 
+    return service.delete_avatar(db, user)
+
+
+@router.post("/upload-photo", response_model=dict)
+async def upload_photo(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Загружает фото пользователя для виртуальной примерки"""
+    photo_url = service.upload_photo_for_tryon(db, user, file)
+    return {"photo_url": photo_url} 

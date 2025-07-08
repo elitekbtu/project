@@ -233,7 +233,9 @@ def _check_owner_or_admin(outfit: Outfit, user: Optional[User]):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
 
 def _calculate_outfit_price(outfit: Outfit) -> OutfitOut:
-    """Вычисляет общую стоимость образа и возвращает OutfitOut"""
+    """
+    Вычисляет общую стоимость образа и возвращает OutfitOut
+    """
     categorized_items = outfit.items
 
     all_items = [item for sublist in categorized_items.values() for item in sublist]
@@ -253,6 +255,7 @@ def _calculate_outfit_price(outfit: Outfit) -> OutfitOut:
         accessories=categorized_items.get("accessories", []),
         fragrances=categorized_items.get("fragrances", []),
         total_price=total_price,
+        tryon_image_url=getattr(outfit, "tryon_image_url", None)
     )
 
 def _price_in_range(price: Optional[float], min_price: Optional[float], max_price: Optional[float]) -> bool:
@@ -264,19 +267,20 @@ def _price_in_range(price: Optional[float], min_price: Optional[float], max_pric
         return False
     return True
 
-def _comment_with_likes(comment: Comment):
-    out_comment = OutfitCommentOut.from_orm(comment)
-    out_comment.likes = comment.liked_by.count()
-    return out_comment
 
-def create_outfit(db: Session, user: User, outfit_in: OutfitCreate):
-    """Создает образ с умной категоризацией товаров"""
+def create_outfit(db: Session, user: User, outfit_in: OutfitCreate, tryon_image_url: str = None):
+    """
+    Создаёт образ с умной категоризацией товаров и сохраняет tryon_image_url, если передан
+    """
     db_outfit = Outfit(
         name=outfit_in.name,
         style=outfit_in.style,
         description=outfit_in.description,
         owner_id=str(user.id),
     )
+
+    if tryon_image_url:
+        db_outfit.tryon_image_url = tryon_image_url
 
     # Обрабатываем каждую категорию товаров
     category_mapping = {

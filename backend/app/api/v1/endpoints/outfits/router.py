@@ -11,7 +11,7 @@ from app.db.models.user import User
 from app.db.models.item import Item
 
 from . import service
-from .schemas import OutfitCreate, OutfitUpdate, OutfitOut, OutfitCommentCreate, OutfitCommentOut, VirtualTryOnRequest, VirtualTryOnResponse
+from .schemas import OutfitCreate, OutfitUpdate, OutfitOut, OutfitCommentCreate, OutfitCommentOut, VirtualTryOnRequest, VirtualTryOnResponse, VirtualTryOnStep, VirtualTryOnMultiStepResponse
 from .service import _smart_determine_category, _calculate_category_match_score, SMART_CATEGORY_SYSTEM
 from app.services.virtual_tryon import virtual_tryon_service
 
@@ -292,52 +292,62 @@ async def generate_virtual_tryon(
     """
     Генерирует виртуальную примерку образа на основе фотографии пользователя и выбранных элементов одежды.
     Применяет по одному предмету из каждой категории для создания полного образа.
+    Возвращает финальное изображение.
     """
     try:
         # Логируем информацию о запросе
-        category_counts = {}
+        logger.info(f"🎯 Запрос виртуальной примерки от пользователя {user.id}")
+        
+        # Группируем предметы по категориям
+        items_by_category = {}
         for item in request.outfit_items:
             category = item.get('category', 'unknown')
-            category_counts[category] = category_counts.get(category, 0) + 1
+            if category not in items_by_category:
+                items_by_category[category] = []
+            items_by_category[category].append(item)
         
-        logger.info(f"🎯 Запрос виртуальной примерки от пользователя {user.id}")
-        logger.info(f"📊 Предметы по категориям: {category_counts}")
+        logger.info(f"📊 Предметы по категориям: {items_by_category}")
         logger.info(f"📸 Исходное изображение: {request.human_image_url}")
         
+        # Создаем список предметов для виртуальной примерки
+        # Берем только один предмет из каждой категории
+        outfit_items = []
+        for category, items in items_by_category.items():
+            if items:
+                # Берем первый предмет из категории
+                item = items[0]
+                outfit_items.append({
+                    'id': item.get('id'),
+                    'name': item.get('name', 'Unknown Item'),
+                    'category': category,
+                    'image_url': item.get('image_url'),  # Только одна фотография
+                    'description': item.get('description', ''),
+                    'brand': item.get('brand', ''),
+                    'color': item.get('color', ''),
+                    'price': item.get('price', 0)
+                })
+        
+        # Инициализируем сервис виртуальной примерки
+        virtual_tryon_service = VirtualTryonService()
+        
+        # Генерируем виртуальную примерку
         result_image_url = await virtual_tryon_service.generate_virtual_tryon_outfit(
             human_image_url=request.human_image_url,
-            outfit_items=request.outfit_items,
-            user_measurements=request.user_measurements
+            outfit_items=outfit_items
         )
         
-        # Формируем сообщение с информацией о примененных предметах
-        applied_categories = set()
-        for item in request.outfit_items:
-            if item.get('category') in ['top', 'bottom', 'footwear', 'accessory']:
-                applied_categories.add(item.get('category'))
-        
-        category_names = {
-            'top': 'верх',
-            'bottom': 'низ', 
-            'footwear': 'обувь',
-            'accessory': 'аксессуары'
-        }
-        
-        applied_names = [category_names.get(cat, cat) for cat in applied_categories]
-        message = f"Образ собран из {len(applied_categories)} категорий: {', '.join(applied_names)}"
-        
         return VirtualTryOnResponse(
-            result_image_url=result_image_url,
             success=True,
-            message=message
+            message="Виртуальная примерка успешно сгенерирована",
+            image_url=result_image_url
         )
         
     except Exception as e:
-        logger.error(f"❌ Ошибка виртуальной примерки: {e}")
+        logger.error(f"❌ Ошибка при генерации виртуальной примерки: {e}")
         return VirtualTryOnResponse(
-            result_image_url=request.human_image_url,
             success=False,
-            message=f"Ошибка при генерации виртуальной примерки: {str(e)}"
+            message=f"Ошибка при генерации виртуальной примерки: {str(e)}",
+            image_url=request.human_image_url
         )
 
 

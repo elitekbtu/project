@@ -50,6 +50,7 @@ class OutfitOut(BaseModel):
     accessories: List[OutfitItemBase] = []
     fragrances: List[OutfitItemBase] = []
     total_price: Optional[float] = None
+    tryon_image_url: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -89,5 +90,16 @@ class VirtualTryOnProgressResponse(BaseModel):
     current_image_url: str
     progress_percentage: float
     status: str  # "processing", "completed", "error"
+
+
+class VirtualTryOnStep(BaseModel):
+    step: int
+    item: dict
+    image_url: str
+
+class VirtualTryOnMultiStepResponse(BaseModel):
+    steps: List[VirtualTryOnStep]
+    success: bool
+    message: str
 
 

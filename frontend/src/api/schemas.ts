@@ -97,6 +97,7 @@ export interface OutfitOut {
   accessory?: OutfitItemBase[];
   fragrance?: OutfitItemBase[];
   total_price?: number;
+  tryon_image_url?: string | null;
 }
 
 export interface ProfileUpdate {

@@ -31,7 +31,7 @@ const OutfitsList = () => {
         name: o.name,
         style: o.style,
         total_price: o.total_price,
-        image_url: undefined,
+        image_url: o.tryon_image_url || undefined,
       }))
       setOutfits(basic)
 
@@ -43,8 +43,9 @@ const OutfitsList = () => {
           const det = details.find((d) => d.status === 'fulfilled' && (d as any).value.data.id === p.id) as any
           if (det && det.status === 'fulfilled') {
             const data: OutfitOut = det.value.data
-            const firstItem = data.top?.[0] || data.bottom?.[0] || data.footwear?.[0] || data.accessory?.[0]
-            return { ...p, image_url: firstItem?.image_url || null }
+            // Используем tryon_image_url, если есть, иначе первую вещь
+            const previewUrl = data.tryon_image_url || data.top?.[0]?.image_url || data.bottom?.[0]?.image_url || data.footwear?.[0]?.image_url || data.accessory?.[0]?.image_url || null
+            return { ...p, image_url: previewUrl }
           }
           return p
         }),
@@ -166,7 +167,11 @@ const OutfitsList = () => {
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-muted">
-                        <Sparkles className="h-12 w-12 text-muted-foreground" />
+                        <img
+                          src="/maneken.png"
+                          alt="Манекен"
+                          className="h-2/3 w-2/3 object-contain opacity-70"
+                        />
                       </div>
                     )}
                   </div>

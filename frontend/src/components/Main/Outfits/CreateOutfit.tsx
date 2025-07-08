@@ -9,6 +9,7 @@ import { type ItemOut, type OutfitCreate } from '../../../api/schemas'
 import { createOutfit, generateVirtualTryon } from '../../../api/outfits'
 import { categoryConfig } from './OutfitBuilder'
 import { Button } from '../../ui/button'
+import { UserPhotoUpload } from '../../ui/user-photo-upload'
 
 interface IndexState {
   [key: string]: number
@@ -32,6 +33,7 @@ const CreateOutfit = () => {
   const [submitting, setSubmitting] = useState(false)
   const [generatingTryOn, setGeneratingTryOn] = useState(false)
   const [tryOnImage, setTryOnImage] = useState<string | null>(null)
+  const [userPhoto, setUserPhoto] = useState<string>('')
 
   const [name, setName] = useState('')
   const [style, setStyle] = useState('')
@@ -217,11 +219,18 @@ const CreateOutfit = () => {
         description: `Будет применено по одному предмету из каждой категории: ${categoriesWithItems}`,
       })
 
-      // Используем дефолтное изображение человека (можно заменить на реальное)
-      const humanImageUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop&crop=face"
+      // Проверяем, есть ли фото пользователя
+      if (!userPhoto) {
+        toast({
+          variant: 'destructive',
+          title: 'Фото не загружено',
+          description: 'Пожалуйста, загрузите свое фото для виртуальной примерки',
+        })
+        return
+      }
       
       const result = await generateVirtualTryon({
-        human_image_url: humanImageUrl,
+        human_image_url: userPhoto,
         outfit_items: allOutfitItems
       })
 
@@ -363,6 +372,15 @@ const CreateOutfit = () => {
         </div>
 
         <div className="sticky top-6 space-y-6">
+          {/* Загрузка фото пользователя */}
+          <div className="bg-white rounded-2xl border shadow-sm p-4">
+            <UserPhotoUpload
+              onPhotoSelected={setUserPhoto}
+              currentPhoto={userPhoto}
+              className=""
+            />
+          </div>
+
           <div className="bg-white rounded-2xl border shadow-sm p-4 flex flex-col items-center">
             <div className="w-full aspect-[3/4] bg-gray-100 rounded overflow-hidden relative">
               {tryOnImage ? (
@@ -379,10 +397,10 @@ const CreateOutfit = () => {
               
               <Button
                 onClick={handleGenerateTryOn}
-                disabled={generatingTryOn}
+                disabled={generatingTryOn || !userPhoto}
                 variant="default"
                 size="sm"
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white disabled:opacity-50"
               >
                 {generatingTryOn ? (
                   <>
@@ -396,12 +414,17 @@ const CreateOutfit = () => {
                   </>
                 )}
               </Button>
-              {!categoryConfig.some((c) => (selectedByCat[c.key] || []).length > 0) && (
+              {!userPhoto && (
+                <div className="text-xs text-muted-foreground text-center">
+                  Загрузите фото для активации
+                </div>
+              )}
+              {!categoryConfig.some((c) => (selectedByCat[c.key] || []).length > 0) && userPhoto && (
                 <div className="text-xs text-muted-foreground text-center">
                   Добавьте предметы для активации
                 </div>
               )}
-              {categoryConfig.some((c) => (selectedByCat[c.key] || []).length > 0) && (
+              {categoryConfig.some((c) => (selectedByCat[c.key] || []).length > 0) && userPhoto && (
                 <div className="text-xs text-muted-foreground text-center">
                   Будет применено по одному предмету из каждой категории
                 </div>

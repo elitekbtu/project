@@ -11,6 +11,10 @@ from app.db.models.preferences import Color, Brand
 AVATAR_DIR = os.getenv("AVATAR_UPLOAD_DIR", "uploads/avatars")
 os.makedirs(AVATAR_DIR, exist_ok=True)
 
+# Directory to store user photos for virtual tryon
+USER_PHOTO_DIR = os.getenv("USER_PHOTO_UPLOAD_DIR", "uploads/user_photos")
+os.makedirs(USER_PHOTO_DIR, exist_ok=True)
+
 
 def get_profile(user: User):
     # Convert relationships into simple lists for pydantic output (handled in ProfileOut validators)
@@ -126,4 +130,20 @@ def delete_avatar(db: Session, user: User):
     user.avatar = None
     db.add(user)
     db.commit()
-    return None 
+    return None
+
+
+def _save_user_photo_file(upload: UploadFile) -> str:
+    """Save user photo file and return relative path accessible via /uploads."""
+    filename = f"{uuid.uuid4().hex}_{upload.filename}"
+    path = os.path.join(USER_PHOTO_DIR, filename)
+    with open(path, "wb") as f:
+        f.write(upload.file.read())
+    return f"/uploads/user_photos/{filename}"
+
+
+def upload_photo_for_tryon(db: Session, user: User, file: UploadFile) -> str:
+    """Upload user photo for virtual tryon (doesn't save to user profile)"""
+    # Save file and return URL
+    photo_url = _save_user_photo_file(file)
+    return photo_url 
