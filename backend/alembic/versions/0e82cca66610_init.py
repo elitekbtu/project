@@ -1,15 +1,15 @@
 """init
 
-Revision ID: 57fe8863cb14
+Revision ID: 0e82cca66610
 Revises: None
-Create Date: 2025-06-27 05:34:59.865380
+Create Date: 2025-07-08 10:48:00.244079
 
 """
 from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = '57fe8863cb14'
+revision = '0e82cca66610'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -116,11 +116,9 @@ def upgrade():
     sa.Column('owner_id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('collection', sa.String(length=100), nullable=True),
     sa.ForeignKeyConstraint(['owner_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_outfits_collection'), 'outfits', ['collection'], unique=False)
     op.create_index(op.f('ix_outfits_id'), 'outfits', ['id'], unique=False)
     op.create_index(op.f('ix_outfits_name'), 'outfits', ['name'], unique=False)
     op.create_index(op.f('ix_outfits_owner_id'), 'outfits', ['owner_id'], unique=False)
@@ -263,7 +261,6 @@ def downgrade():
     op.drop_index(op.f('ix_outfits_owner_id'), table_name='outfits')
     op.drop_index(op.f('ix_outfits_name'), table_name='outfits')
     op.drop_index(op.f('ix_outfits_id'), table_name='outfits')
-    op.drop_index(op.f('ix_outfits_collection'), table_name='outfits')
     op.drop_table('outfits')
     op.drop_index(op.f('ix_item_variants_sku'), table_name='item_variants')
     op.drop_index(op.f('ix_item_variants_size'), table_name='item_variants')

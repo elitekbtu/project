@@ -10,7 +10,6 @@ import { type ItemOut } from '../../../api/schemas'
 import { createOutfit } from '../../../api/outfits'
 import { categoryConfig } from './OutfitBuilder'
 import { Button } from '../../ui/button'
-import { useAuth } from '../../../context/AuthContext'
 
 interface IndexState {
   [key: string]: number
@@ -26,7 +25,6 @@ const idFieldMap: Record<string, string> = {
 }
 
 const CreateOutfit = () => {
-  const { user } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
   const [itemsByCat, setItemsByCat] = useState<Record<string, ItemOut[]>>({})
