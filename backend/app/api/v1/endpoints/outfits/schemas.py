@@ -23,6 +23,7 @@ class OutfitCreate(BaseModel):
     footwear_ids: List[int] = []
     accessories_ids: List[int] = []
     fragrances_ids: List[int] = []
+    tryon_image_url: Optional[str] = None  # URL изображения виртуальной примерки
 
 
 class OutfitUpdate(BaseModel):

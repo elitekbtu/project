@@ -268,7 +268,7 @@ def _price_in_range(price: Optional[float], min_price: Optional[float], max_pric
     return True
 
 
-def create_outfit(db: Session, user: User, outfit_in: OutfitCreate, tryon_image_url: str = None):
+def create_outfit(db: Session, user: User, outfit_in: OutfitCreate):
     """
     Создаёт образ с умной категоризацией товаров и сохраняет tryon_image_url, если передан
     """
@@ -277,10 +277,8 @@ def create_outfit(db: Session, user: User, outfit_in: OutfitCreate, tryon_image_
         style=outfit_in.style,
         description=outfit_in.description,
         owner_id=str(user.id),
+        tryon_image_url=outfit_in.tryon_image_url  # Используем tryon_image_url из схемы
     )
-
-    if tryon_image_url:
-        db_outfit.tryon_image_url = tryon_image_url
 
     # Обрабатываем каждую категорию товаров
     category_mapping = {

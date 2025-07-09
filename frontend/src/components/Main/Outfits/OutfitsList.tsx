@@ -161,9 +161,13 @@ const OutfitsList = () => {
                   <div className="relative aspect-[3/4] overflow-hidden">
                     {o.image_url ? (
                       <img
-                        src={o.image_url}
+                        src={o.image_url.startsWith('/') ? `${window.location.origin}${o.image_url}` : o.image_url}
                         alt={o.name}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        onError={(e) => {
+                          console.error('Ошибка загрузки изображения образа:', o.image_url)
+                          e.currentTarget.src = '/maneken.png'
+                        }}
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-muted">

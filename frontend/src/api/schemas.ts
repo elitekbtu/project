@@ -139,12 +139,12 @@ export interface OutfitCreate {
   name: string;
   style: string;
   description?: string;
-  // Убрано поле collection - коллекции больше не используются
-  top_ids?: number[];
-  bottom_ids?: number[];
-  footwear_ids?: number[];
-  accessories_ids?: number[];
-  fragrances_ids?: number[];
+  top_ids: number[];
+  bottom_ids: number[];
+  footwear_ids: number[];
+  accessories_ids: number[];
+  fragrances_ids: number[];
+  tryon_image_url?: string; // URL изображения виртуальной примерки
 }
 
 export interface OutfitUpdate {

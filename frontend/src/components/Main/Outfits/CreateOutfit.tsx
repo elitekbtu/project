@@ -137,37 +137,26 @@ const CreateOutfit = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim() || !style.trim()) {
-      toast({ variant: 'destructive', title: 'Заполните обязательные поля' })
-      return
-    }
-
-    const hasAnySelected = categoryConfig.some((c) => (selectedByCat[c.key] || []).length > 0)
-    if (!hasAnySelected) {
-      toast({
-        variant: 'destructive',
-        title: 'Пустой образ',
-        description: 'Добавьте хотя бы один предмет, чтобы создать образ.',
-      })
-      return
-    }
+    if (!name || !style) return
 
     setSubmitting(true)
     try {
-      const payload: OutfitCreate = { 
-        name, 
-        style, 
-        description: description || undefined 
+      const payload: OutfitCreate = {
+        name,
+        style,
+        description,
+        top_ids: selectedByCat.top?.map((i) => i.id) || [],
+        bottom_ids: selectedByCat.bottom?.map((i) => i.id) || [],
+        footwear_ids: selectedByCat.footwear?.map((i) => i.id) || [],
+        accessories_ids: selectedByCat.accessory?.map((i) => i.id) || [],
+        fragrances_ids: selectedByCat.fragrance?.map((i) => i.id) || [],
+        tryon_image_url: tryOnImage || undefined // Передаем URL сгенерированного изображения
       }
-      categoryConfig.forEach((c) => {
-        const selList = selectedByCat[c.key] || []
-        ;(payload as any)[idFieldMap[c.key]] = selList.map((it) => it.id)
-      })
+
       const newOutfit = await createOutfit(payload)
-      toast({ title: 'Образ создан', description: 'Вы перенаправлены на страницу образа' })
+      toast({ title: 'Образ создан', description: 'Образ успешно добавлен в коллекцию' })
       navigate(`/outfits/${newOutfit.id}`)
     } catch (err: any) {
-      console.error(err)
       const message = err?.response?.data?.detail || 'Не удалось создать образ'
       toast({ variant: 'destructive', title: 'Ошибка', description: message })
     } finally {
@@ -384,7 +373,15 @@ const CreateOutfit = () => {
           <div className="bg-white rounded-2xl border shadow-sm p-4 flex flex-col items-center">
             <div className="w-full aspect-[3/4] bg-gray-100 rounded overflow-hidden relative">
               {tryOnImage ? (
-                <img src={tryOnImage} className="object-cover w-full h-full" alt="Виртуальная примерка" />
+                <img 
+                  src={tryOnImage.startsWith('/') ? `${window.location.origin}${tryOnImage}` : tryOnImage} 
+                  className="object-cover w-full h-full" 
+                  alt="Виртуальная примерка"
+                  onError={(e) => {
+                    console.error('Ошибка загрузки изображения виртуальной примерки:', tryOnImage)
+                    e.currentTarget.src = '/maneken.jpg'
+                  }}
+                />
               ) : (
                 <img src="/maneken.jpg" className="object-cover w-full h-full" alt="Манекен" />
               )}

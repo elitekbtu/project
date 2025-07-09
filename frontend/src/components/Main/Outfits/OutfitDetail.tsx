@@ -40,6 +40,7 @@ interface Outfit {
   footwear: Item[]
   accessories: Item[]
   fragrances: Item[]
+  tryon_image_url?: string | null  // URL сгенерированного изображения виртуальной примерки
 }
 
 const OutfitDetail = () => {
@@ -255,23 +256,50 @@ const OutfitDetail = () => {
           className="w-full md:w-1/2"
         >
           <div className="aspect-[4/5] relative overflow-hidden rounded-xl bg-muted shadow-sm border">
-            <img
-              src="/maneken.jpg"
-              alt="Манекен"
-              className="absolute inset-0 w-full h-full object-contain"
-            />
-            {previewLayers.map((url, idx) => {
-              if (!url) return null
-              return (
+            {outfit.tryon_image_url ? (
+              // Показываем сгенерированное изображение виртуальной примерки
+              <img
+                src={outfit.tryon_image_url.startsWith('/') ? `${window.location.origin}${outfit.tryon_image_url}` : outfit.tryon_image_url}
+                alt="Виртуальная примерка"
+                className="absolute inset-0 w-full h-full object-cover"
+                onError={(e) => {
+                  console.error('Ошибка загрузки изображения виртуальной примерки:', outfit.tryon_image_url)
+                  // Fallback к стандартному превью с манекеном
+                  e.currentTarget.style.display = 'none'
+                  // Показываем стандартный превью
+                  const container = e.currentTarget.parentElement
+                  if (container) {
+                    container.innerHTML = `
+                      <img src="/maneken.jpg" alt="Манекен" class="absolute inset-0 w-full h-full object-contain" />
+                      ${previewLayers.map((url, idx) => 
+                        url ? `<img src="${url}" alt="layer" class="absolute inset-0 w-full h-full object-contain" style="z-index: ${idx + 1}" />` : ''
+                      ).join('')}
+                    `
+                  }
+                }}
+              />
+            ) : (
+              // Стандартный превью с манекеном и слоями
+              <>
                 <img
-                  key={idx}
-                  src={url}
-                  alt="layer"
+                  src="/maneken.jpg"
+                  alt="Манекен"
                   className="absolute inset-0 w-full h-full object-contain"
-                  style={{ zIndex: idx + 1 }}
                 />
-              )
-            })}
+                {previewLayers.map((url, idx) => {
+                  if (!url) return null
+                  return (
+                    <img
+                      key={idx}
+                      src={url}
+                      alt="layer"
+                      className="absolute inset-0 w-full h-full object-contain"
+                      style={{ zIndex: idx + 1 }}
+                    />
+                  )
+                })}
+              </>
+            )}
           </div>
         </motion.div>
 

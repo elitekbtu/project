@@ -1,10 +1,13 @@
 import replicate
 import asyncio
 import httpx
+import time
+import urllib.parse
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 import os
 import logging
+from PIL import Image, ImageDraw, ImageFont
 
 from app.core.config import get_settings
 
@@ -22,6 +25,12 @@ class VirtualTryOnService:
         self.fallback_model_id = "cuuupid/idm-vton:0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985"
         self.output_path = Path("uploads/virtual_tryon")
         self.output_path.mkdir(parents=True, exist_ok=True)
+        
+        # Проверяем, что папка действительно создана
+        if not self.output_path.exists():
+            logger.error(f"❌ Не удалось создать папку: {self.output_path}")
+        else:
+            logger.info(f"✅ Папка для виртуальной примерки создана: {self.output_path}")
         
         if not self.replicate_api_key:
             logger.warning("REPLICATE_API_TOKEN не установлен. Виртуальная примерка будет недоступна.")
@@ -137,12 +146,20 @@ class VirtualTryOnService:
         """Применяет одну вещь к изображению человека"""
         
         try:
+            # Преобразуем human_image в полный URL если это локальный путь
+            if human_image.startswith('/uploads/'):
+                domain = "https://trc.works"  # Используем основной домен
+                human_image_url = f"{domain}{human_image}"
+                logger.info(f"🔄 Преобразован путь к фото пользователя: {human_image} → {human_image_url}")
+            else:
+                human_image_url = human_image
+            
             # Проверяем валидность URL изображения одежды
             garment_image_url = garment_item.get("image_url", "")
             if not self._is_valid_image_url(garment_image_url):
                 logger.warning(f"⚠️ Невалидный URL изображения для {garment_item.get('name', 'Unknown')}: {garment_image_url}")
                 # Возвращаем мок-результат для тестирования
-                return self._generate_mock_result(step_number, garment_item)
+                return await self._generate_mock_result(step_number, garment_item)
             
             # Преобразуем относительный путь в полный URL если нужно
             if garment_image_url.startswith('/uploads/'):
@@ -163,7 +180,7 @@ class VirtualTryOnService:
             
             # Параметры для replicate API
             input_params = {
-                "human_img": human_image,
+                "human_img": human_image_url,  # Используем полный URL
                 "garm_img": full_garment_url,
                 "garment_des": garment_description,
                 "category": category,
@@ -187,7 +204,7 @@ class VirtualTryOnService:
         except Exception as e:
             logger.error(f"❌ Ошибка применения вещи {garment_item.get('name', 'Unknown')}: {e}")
             # Возвращаем мок-результат при ошибке
-            return self._generate_mock_result(step_number, garment_item)
+            return await self._generate_mock_result(step_number, garment_item)
     
     def _is_valid_image_url(self, url: str) -> bool:
         """Проверяет валидность URL изображения"""
@@ -207,17 +224,57 @@ class VirtualTryOnService:
         
         return False
     
-    def _generate_mock_result(self, step_number: int, item: Dict[str, Any]) -> str:
+    async def _generate_mock_result(self, step_number: int, item: Dict[str, Any]) -> str:
         """Генерирует мок-результат для тестирования"""
         try:
-            # Создаем мок-изображение с информацией о примененном предмете
-            timestamp = int(asyncio.get_event_loop().time())
-            item_name = item.get("name", "unknown").replace(" ", "_")[:20]
-            filename = f"mock_tryon_step_{step_number}_{item_name}_{timestamp}.jpg"
+            # Создаем безопасное имя файла без кириллицы
+            timestamp = int(time.time())
+            item_name = item.get("name", "unknown")
+            # Удаляем кириллицу и специальные символы
+            safe_name = ''.join(c for c in item_name if c.isalnum() or c in (' ', '-', '_')).replace(' ', '_')[:20]
+            filename = f"mock_tryon_step_{step_number}_{safe_name}_{timestamp}.jpg"
             filepath = self.output_path / filename
             
-            # Создаем простое мок-изображение (можно заменить на реальную генерацию)
-            # Пока возвращаем URL с информацией о мок-результате
+            logger.info(f"🎭 Создаю мок-файл: {filepath}")
+            
+            # Создаем простое изображение-заглушку
+            width, height = 400, 600
+            image = Image.new('RGB', (width, height), color='lightgray')
+            draw = ImageDraw.Draw(image)
+            
+            # Пытаемся использовать стандартный шрифт, если не получается - используем дефолтный
+            try:
+                font = ImageFont.truetype("arial.ttf", 20)
+            except:
+                font = ImageFont.load_default()
+            
+            # Рисуем текст на изображении
+            text_lines = [
+                f"Mock Virtual Try-On",
+                f"Step {step_number}",
+                f"Item: {item.get('name', 'Unknown')[:30]}",
+                f"Category: {item.get('category', 'Unknown')}",
+                f"Brand: {item.get('brand', 'Unknown')[:20]}",
+                f"Color: {item.get('color', 'Unknown')}"
+            ]
+            
+            y_offset = 50
+            for line in text_lines:
+                draw.text((20, y_offset), line, fill='black', font=font)
+                y_offset += 30
+            
+            # Сохраняем изображение
+            image.save(filepath, 'JPEG', quality=95)
+            logger.info(f"✅ Мок-файл сохранен: {filepath}")
+            
+            # Проверяем, что файл действительно создан
+            if filepath.exists():
+                logger.info(f"✅ Файл существует на диске: {filepath}")
+                logger.info(f"📊 Размер файла: {filepath.stat().st_size} байт")
+            else:
+                logger.error(f"❌ Файл не найден на диске: {filepath}")
+            
+            # Возвращаем URL для доступа (без URL-кодирования)
             mock_url = f"/uploads/virtual_tryon/{filename}"
             
             logger.info(f"🎭 Создан мок-результат для {item.get('name', 'Unknown')}: {mock_url}")
@@ -225,6 +282,8 @@ class VirtualTryOnService:
             
         except Exception as e:
             logger.error(f"❌ Ошибка создания мок-результата: {e}")
+            import traceback
+            logger.error(f"❌ Traceback: {traceback.format_exc()}")
             # Возвращаем дефолтное изображение
             return "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop&crop=face"
     
@@ -315,12 +374,14 @@ class VirtualTryOnService:
         try:
             # Если это мок-результат, создаем мок-файл
             if output == "mock_result":
-                return self._generate_mock_result(step_number, item)
+                return await self._generate_mock_result(step_number, item)
             
             # Генерируем имя файла
-            timestamp = int(asyncio.get_event_loop().time())
-            item_name = item.get("name", "unknown").replace(" ", "_")[:20]
-            filename = f"tryon_step_{step_number}_{item_name}_{timestamp}.jpg"
+            timestamp = int(time.time())
+            item_name = item.get("name", "unknown")
+            # Удаляем кириллицу и специальные символы
+            safe_name = ''.join(c for c in item_name if c.isalnum() or c in (' ', '-', '_')).replace(' ', '_')[:20]
+            filename = f"tryon_step_{step_number}_{safe_name}_{timestamp}.jpg"
             filepath = self.output_path / filename
             
             # Сохраняем файл
@@ -342,7 +403,7 @@ class VirtualTryOnService:
         except Exception as e:
             logger.error(f"❌ Ошибка сохранения результата: {e}")
             # Возвращаем мок-результат при ошибке
-            return self._generate_mock_result(step_number, item)
+            return await self._generate_mock_result(step_number, item)
 
 # Создаем единственный экземпляр сервиса
 virtual_tryon_service = VirtualTryOnService()
