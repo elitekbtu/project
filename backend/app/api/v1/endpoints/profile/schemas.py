@@ -46,6 +46,12 @@ class ProfileOut(BaseModel):
             return v.split(",")
         return v
 
+    @validator("is_moderator", pre=True)
+    def _handle_is_moderator(cls, v):
+        if v is None:
+            return False
+        return v
+
 
 class ProfileUpdate(BaseModel):
     avatar: Optional[str] = None
