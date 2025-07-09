@@ -327,9 +327,6 @@ async def generate_virtual_tryon(
                     'price': item.get('price', 0)
                 })
         
-        # Инициализируем сервис виртуальной примерки
-        virtual_tryon_service = VirtualTryonService()
-        
         # Генерируем виртуальную примерку
         result_image_url = await virtual_tryon_service.generate_virtual_tryon_outfit(
             human_image_url=request.human_image_url,
@@ -337,17 +334,17 @@ async def generate_virtual_tryon(
         )
         
         return VirtualTryOnResponse(
+            result_image_url=result_image_url,
             success=True,
-            message="Виртуальная примерка успешно сгенерирована",
-            image_url=result_image_url
+            message="Виртуальная примерка успешно сгенерирована"
         )
         
     except Exception as e:
         logger.error(f"❌ Ошибка при генерации виртуальной примерки: {e}")
         return VirtualTryOnResponse(
+            result_image_url=request.human_image_url,
             success=False,
-            message=f"Ошибка при генерации виртуальной примерки: {str(e)}",
-            image_url=request.human_image_url
+            message=f"Ошибка при генерации виртуальной примерки: {str(e)}"
         )
 
 
