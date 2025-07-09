@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Text, DateTime
+from sqlalchemy import Column, Integer, String, Float, Text, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
@@ -10,6 +10,7 @@ class Item(Base):
     __tablename__ = "items"
 
     id = Column(Integer, primary_key=True, index=True)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     name = Column(String(100), nullable=False, index=True)
     brand = Column(String(50), nullable=True, index=True)
     color = Column(String(30), nullable=True, index=True)
@@ -36,6 +37,9 @@ class Item(Base):
     images = relationship("ItemImage", back_populates="item", cascade="all, delete-orphan")
 
     variants = relationship("ItemVariant", back_populates="item", cascade="all, delete-orphan")
+
+    # Creator of the item (e.g., moderator or admin)
+    owner = relationship("User", back_populates="items")
 
     @property
     def image_urls(self):

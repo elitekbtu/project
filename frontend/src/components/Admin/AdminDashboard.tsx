@@ -1,13 +1,16 @@
 import { motion } from 'framer-motion'
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { Users, Shirt, Layers, ChevronRight, Download } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 import { cn } from '../../lib/utils'
 
 const AdminDashboard = () => {
   const location = useLocation()
   const currentPath = location.pathname
 
-  const navItems = [
+  const { isAdmin, isModerator } = useAuth()
+
+  const baseItems = [
     {
       path: '/admin/users',
       label: 'Пользователи',
@@ -28,7 +31,16 @@ const AdminDashboard = () => {
       label: 'Парсер Lamoda',
       icon: <Download className="h-4 w-4" />
     }
-  ]
+  ] as const
+
+  const navItems = baseItems.filter((item) => {
+    if (isAdmin) return true
+    if (isModerator) {
+      // модератору показываем только раздел товаров
+      return item.path.startsWith('/admin/items')
+    }
+    return false
+  })
 
   const containerVariants = {
     hidden: { opacity: 0 },

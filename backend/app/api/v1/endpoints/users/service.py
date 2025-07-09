@@ -44,6 +44,7 @@ def create_user_admin(db: Session, body: UserCreateAdmin) -> User:
         email=body.email.lower(),
         hashed_password=get_password_hash(body.password),
         is_admin=body.is_admin,
+        is_moderator=body.is_moderator,
         is_active=body.is_active,
     )
     db.add(user)
@@ -68,6 +69,8 @@ def update_user_admin(db: Session, user_id: int, body: UserUpdateAdmin) -> User:
         user.hashed_password = get_password_hash(body.password)
     if body.is_admin is not None:
         user.is_admin = body.is_admin
+    if body.is_moderator is not None:
+        user.is_moderator = body.is_moderator
     if body.is_active is not None:
         user.is_active = body.is_active
 

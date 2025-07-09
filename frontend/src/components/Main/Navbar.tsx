@@ -14,7 +14,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 
 const MainNavbar = () => {
-  const { user, isAdmin } = useAuth()
+  const { user, isAdmin, isModerator } = useAuth()
   const { totalItems } = useCart()
   const { favoriteIds } = useFavorites()
   
@@ -37,8 +37,11 @@ const MainNavbar = () => {
           <Link to="/outfits" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             Образы
           </Link>
-          {isAdmin && (
-            <Link to="/admin/users" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+          {(isAdmin || isModerator) && (
+            <Link
+              to={isAdmin ? "/admin/users" : "/admin/items"}
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
               Админ
             </Link>
           )}
@@ -68,9 +71,9 @@ const MainNavbar = () => {
                   <Sparkles className="h-4 w-4" /> Образы
                 </Link>
               </DropdownMenuItem>
-              {isAdmin && (
+              {(isAdmin || isModerator) && (
                 <DropdownMenuItem asChild>
-                  <Link to="/admin/users" className="flex items-center gap-2">
+                  <Link to={isAdmin ? "/admin/users" : "/admin/items"} className="flex items-center gap-2">
                     <Shield className="h-4 w-4" /> Админ
                   </Link>
                 </DropdownMenuItem>

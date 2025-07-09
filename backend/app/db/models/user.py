@@ -14,6 +14,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
+    is_moderator = Column(Boolean, default=False)
     avatar = Column(String, nullable=True)
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
@@ -59,3 +60,5 @@ class User(Base):
     )
 
     cart_items = relationship("CartItem", back_populates="user", cascade="all, delete-orphan", lazy="dynamic") 
+    # Items created by this user (e.g., moderators)
+    items = relationship("Item", back_populates="owner", cascade="all, delete-orphan") 

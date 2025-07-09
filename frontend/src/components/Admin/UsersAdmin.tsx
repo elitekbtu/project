@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Loader2, PlusCircle, Pencil, Trash2, Shield, UserCheck, UserX } from 'lucide-react'
+import { Loader2, PlusCircle, Pencil, Trash2, Shield, UserCheck, UserX, Star } from 'lucide-react'
 import api from '../../api/client'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
@@ -11,6 +11,7 @@ interface User {
   id: number
   email: string
   is_admin: boolean
+  is_moderator: boolean
   is_active: boolean
 }
 
@@ -114,19 +115,19 @@ const UsersAdmin = () => {
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm">
                     <div className="flex gap-2">
-                      <Badge 
-                        variant={user.is_admin ? "default" : "secondary"} 
-                        className="flex items-center gap-1"
-                      >
-                        {user.is_admin ? (
-                          <>
-                            <Shield className="h-3 w-3" />
-                            <span>Админ</span>
-                          </>
-                        ) : (
-                          <span>Пользователь</span>
-                        )}
-                      </Badge>
+                      {user.is_admin ? (
+                        <Badge variant="default" className="flex items-center gap-1">
+                          <Shield className="h-3 w-3" />
+                          <span>Админ</span>
+                        </Badge>
+                      ) : user.is_moderator ? (
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                          <Star className="h-3 w-3" />
+                          <span>Модератор</span>
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">Пользователь</Badge>
+                      )}
                       <Badge 
                         variant={user.is_active ? "default" : "destructive"} 
                         className="flex items-center gap-1"

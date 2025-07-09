@@ -12,6 +12,7 @@ import { InfoCircledIcon } from '@radix-ui/react-icons'
 const Register = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { register: registerUser } = useAuth()
@@ -28,6 +29,11 @@ const Register = () => {
     }
     if (password.length < 8) {
       setError('Пароль должен содержать минимум 8 символов')
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('Пароли не совпадают')
       return
     }
 
@@ -94,6 +100,18 @@ const Register = () => {
                   placeholder="Пароль"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="h-11"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Повторите пароль"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   className="h-11"
                 />

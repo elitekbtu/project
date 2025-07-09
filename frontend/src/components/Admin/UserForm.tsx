@@ -15,6 +15,7 @@ const emptyUser: UserCreateAdmin = {
   email: '',
   password: '',
   is_admin: false,
+  is_moderator: false,
   is_active: true,
 }
 
@@ -37,6 +38,7 @@ const UserForm = () => {
             email: user.email,
             password: '',
             is_admin: !!user.is_admin,
+            is_moderator: !!user.is_moderator,
             is_active: !!user.is_active,
           })
         }
@@ -85,6 +87,7 @@ const UserForm = () => {
           email: form.email,
           password: form.password || undefined,
           is_admin: form.is_admin,
+          is_moderator: form.is_moderator,
           is_active: form.is_active,
         }
         await updateUser(Number(id), payload)
@@ -221,6 +224,23 @@ const UserForm = () => {
                 checked={form.is_admin}
                 onCheckedChange={() => handleToggle('is_admin')}
                 className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-gray-200 dark:data-[state=unchecked]:bg-gray-700"
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-900/50">
+              <div>
+                <Label htmlFor="is_moderator" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Модератор
+                </Label>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Может создавать товары и управлять своими товарами
+                </p>
+              </div>
+              <Switch
+                id="is_moderator"
+                checked={!!form.is_moderator}
+                onCheckedChange={() => handleToggle('is_moderator')}
+                className="data-[state=checked]:bg-yellow-500 data-[state=unchecked]:bg-gray-200 dark:data-[state=unchecked]:bg-gray-700"
               />
             </div>
 

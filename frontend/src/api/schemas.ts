@@ -14,6 +14,7 @@ export interface ProfileOut {
   favorite_colors?: string | string[];
   favorite_brands?: string | string[];
   is_admin?: boolean;
+  is_moderator?: boolean;
 }
 
 export interface TokensUserOut {
@@ -27,6 +28,7 @@ export interface UserOut {
   id: number;
   email: string;
   is_admin: boolean;
+  is_moderator: boolean;
   is_active: boolean;
 }
 
@@ -34,6 +36,7 @@ export interface UserCreateAdmin {
   email: string;
   password: string;
   is_admin?: boolean;
+  is_moderator?: boolean;
   is_active?: boolean;
 }
 
@@ -41,6 +44,7 @@ export interface UserUpdateAdmin {
   email?: string;
   password?: string;
   is_admin?: boolean;
+  is_moderator?: boolean;
   is_active?: boolean;
 }
 

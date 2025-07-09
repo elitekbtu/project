@@ -72,6 +72,7 @@ async def create_item(
     collection: Optional[str],
     images: Optional[List[UploadFile]],
     image_url: Optional[str],
+    owner: Optional[User] = None,
 ):
     primary_image_url: Optional[str] = None
     image_urls: List[str] = []
@@ -98,6 +99,7 @@ async def create_item(
         size=size,
         style=style,
         collection=collection,
+        owner=owner,
     )
 
     db.add(db_item)
@@ -112,7 +114,7 @@ async def create_item(
     return db_item
 
 
-def list_items(db: Session, filters: dict, skip: int = 0, limit: int = 100, user_id: Optional[int] = None):
+def list_items(db: Session, filters: dict, skip: int = 0, limit: int = 100, user_id: Optional[int] = None, current_user: Optional[User] = None):
     query = db.query(Item)
 
     # Dynamically add favorite status if user is logged in
@@ -128,6 +130,10 @@ def list_items(db: Session, filters: dict, skip: int = 0, limit: int = 100, user
                 favorite_items_alias.c.user_id == user_id,
             ),
         )
+
+    # If the requester is a moderator (not admin), restrict to their own items
+    if current_user is not None and getattr(current_user, "is_moderator", False) and not is_admin(current_user):
+        query = query.filter(Item.owner_id == current_user.id)
 
     # Apply filters from the dictionary
     if q := filters.get("q"):
@@ -209,7 +215,10 @@ def update_item(db: Session, item_id: int, item_in: ItemUpdate):
     return item
 
 
-def delete_item(db: Session, item_id: int):
+from app.core.security import is_admin
+
+
+def delete_item(db: Session, item_id: int, user: User):
     item = db.get(Item, item_id)
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
@@ -217,6 +226,13 @@ def delete_item(db: Session, item_id: int):
     # The associations to outfits are now handled by the OutfitItem model,
     # which has a CASCADE delete relationship from the Item.
     # The old manual deletion code below was for a previous schema and has been removed.
+
+    # Permission check: admins can always delete. Moderators can delete only their own items.
+    if not is_admin(user):
+        if not getattr(user, "is_moderator", False):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient privileges")
+        if item.owner_id != user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Moderators can delete only their own items")
 
     # Remove images
     for img in item.images:

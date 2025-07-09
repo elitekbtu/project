@@ -18,6 +18,7 @@ import Settings from './components/Main/Settings'
 import Logout from './components/Main/Logout'
 import RequireAuth from './components/common/RequireAuth'
 import RequireAdmin from './components/common/RequireAdmin'
+import RequirePanelAccess from './components/common/RequirePanelAccess'
 import ItemsList from './components/Main/Items/ItemsList'
 import ItemDetail from './components/Main/Items/ItemDetail'
 import OutfitsList from './components/Main/Outfits/OutfitsList'
@@ -71,17 +72,17 @@ function App() {
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/history" element={<History />} />
               <Route path="/cart" element={<Cart />} />
-              <Route element={<RequireAdmin><AdminDashboard /></RequireAdmin>}>
-                <Route path="/admin/users" element={<UsersAdmin />} />
-                <Route path="/admin/users/new" element={<UserForm />} />
-                <Route path="/admin/users/:id/edit" element={<UserForm />} />
+              <Route element={<RequirePanelAccess><AdminDashboard /></RequirePanelAccess>}>
+                <Route path="/admin/users" element={<RequireAdmin><UsersAdmin /></RequireAdmin>} />
+                <Route path="/admin/users/new" element={<RequireAdmin><UserForm /></RequireAdmin>} />
+                <Route path="/admin/users/:id/edit" element={<RequireAdmin><UserForm /></RequireAdmin>} />
                 <Route path="/admin/items" element={<ItemsAdmin />} />
                 <Route path="/admin/items/new" element={<ItemForm />} />
                 <Route path="/admin/items/:id/edit" element={<ItemForm />} />
-                <Route path="/admin/outfits" element={<OutfitsAdmin />} />
-                <Route path="/admin/outfits/new" element={<OutfitForm />} />
-                <Route path="/admin/outfits/:id/edit" element={<OutfitForm />} />
-                <Route path="/admin/parser" element={<LamodaParser />} />
+                <Route path="/admin/outfits" element={<RequireAdmin><OutfitsAdmin /></RequireAdmin>} />
+                <Route path="/admin/outfits/new" element={<RequireAdmin><OutfitForm /></RequireAdmin>} />
+                <Route path="/admin/outfits/:id/edit" element={<RequireAdmin><OutfitForm /></RequireAdmin>} />
+                <Route path="/admin/parser" element={<RequireAdmin><LamodaParser /></RequireAdmin>} />
               </Route>
             </Route>
             {/* Fallback */}

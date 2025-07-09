@@ -11,6 +11,8 @@ interface AuthContextProps {
   register: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
   isAdmin: boolean
+  isModerator: boolean
+  hasPanelAccess: boolean
   /** Обновить данные пользователя в контексте (после изменения профиля) */
   updateUser: (data?: ProfileOut) => void
 }
@@ -92,7 +94,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, logout, isAdmin: !!user?.is_admin, updateUser }}
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        logout,
+        isAdmin: !!user?.is_admin,
+        isModerator: !!(user as any)?.is_moderator,
+        hasPanelAccess: !!(user?.is_admin || (user as any)?.is_moderator),
+        updateUser,
+      }}
     >
       {children}
     </AuthContext.Provider>

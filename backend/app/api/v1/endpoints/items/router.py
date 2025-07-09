@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import require_admin, get_current_user_optional, get_current_user
+from app.core.security import require_admin_or_moderator
 from app.db.models.user import User
 from . import service
 from .schemas import ItemOut, ItemUpdate, VariantOut, VariantCreate, VariantUpdate, CommentOut, CommentCreate, ItemImageOut
@@ -11,7 +12,7 @@ from .schemas import ItemOut, ItemUpdate, VariantOut, VariantCreate, VariantUpda
 router = APIRouter(prefix="/items", tags=["Items"])
 
 
-@router.post("/", response_model=ItemOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_admin)])
+@router.post("/", response_model=ItemOut, status_code=status.HTTP_201_CREATED)
 async def create_item(
     name: str = Form(...),
     brand: Optional[str] = Form(None),
@@ -26,9 +27,23 @@ async def create_item(
     images: Optional[List[UploadFile]] = File(None),
     image_url: Optional[str] = Form(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_or_moderator),
 ):
     return await service.create_item(
-        db, name, brand, color, description, price, category, article, size, style, collection, images, image_url
+        db,
+        name,
+        brand,
+        color,
+        description,
+        price,
+        category,
+        article,
+        size,
+        style,
+        collection,
+        images,
+        image_url,
+        current_user,
     )
 
 
@@ -59,7 +74,7 @@ def list_items(
         "sort_by": sort_by,
         "clothing_type": clothing_type,
     }
-    return service.list_items(db, filters, skip, limit, user.id if user else None)
+    return service.list_items(db, filters, skip, limit, user.id if user else None, user)
 
 
 @router.get("/trending", response_model=List[ItemOut])
@@ -103,9 +118,13 @@ def update_item(item_id: int, item_in: ItemUpdate, db: Session = Depends(get_db)
     return service.update_item(db, item_id, item_in)
 
 
-@router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)])
-def delete_item(item_id: int, db: Session = Depends(get_db)):
-    return service.delete_item(db, item_id)
+@router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_or_moderator),
+):
+    return service.delete_item(db, item_id, current_user)
 
 
 @router.get("/{item_id}/similar", response_model=List[ItemOut])

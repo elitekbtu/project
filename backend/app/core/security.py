@@ -97,6 +97,25 @@ def is_admin(user: User) -> bool:
     admin_emails = [e.strip().lower() for e in settings.ADMIN_EMAILS.split(",") if e.strip()]
     return user.email.lower() in admin_emails
 
+# ---------------- Moderator helpers ----------------
+
+
+def is_moderator(user: User) -> bool:
+    """Return True if the user has the moderator role."""
+    return bool(getattr(user, "is_moderator", False))
+
+
+def require_moderator(user: User = Depends(get_current_user)):
+    if not is_moderator(user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Moderator privileges required")
+    return user
+
+
+def require_admin_or_moderator(user: User = Depends(get_current_user)):
+    if not (is_admin(user) or is_moderator(user)):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin or moderator privileges required")
+    return user
+
 
 def require_admin(user: User = Depends(get_current_user)):
     if not is_admin(user):

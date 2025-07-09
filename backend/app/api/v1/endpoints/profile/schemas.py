@@ -22,6 +22,7 @@ class ProfileOut(BaseModel):
     favorite_colors: Optional[list[str]] = None
     favorite_brands: Optional[list[str]] = None
     is_admin: bool = False
+    is_moderator: bool = False
 
     class Config:
         orm_mode = True

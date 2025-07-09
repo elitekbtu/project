@@ -55,7 +55,7 @@ const Hero = () => {
     <div className="relative overflow-hidden">
       {/* Анимированные элементы фона */}
       <motion.div
-        className="absolute top-1/3 left-1/4 w-64 h-64 rounded-full bg-primary/10 blur-3xl"
+        className="absolute top-1/3 left-1/4 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none"
         animate={{
           x: [0, 50, 0],
           y: [0, 30, 0],
@@ -69,7 +69,7 @@ const Hero = () => {
       />
       
       <motion.div
-        className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-accent/10 blur-3xl"
+        className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-accent/10 blur-3xl pointer-events-none"
         animate={{
           x: [0, -40, 0],
           y: [0, -20, 0],
@@ -82,16 +82,16 @@ const Hero = () => {
         }}
       />
 
-      <div className="container mx-auto px-4 py-16 md:py-24 lg:py-32">
+      <div className="relative z-10 container mx-auto px-4 py-16 md:py-24 lg:py-32">
         <div className="mx-auto max-w-4xl text-center">
           {/* Бейдж */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="mb-6 inline-block"
+            className="mb-6 inline-block relative z-10"
           >
-            <div className="inline-flex items-center gap-2 rounded-full bg-muted/50 px-4 py-2 text-sm font-medium text-muted-foreground backdrop-blur-sm border border-muted/30 shadow-sm hover:bg-muted/70 transition-colors">
+            <div className="inline-flex items-center gap-2 rounded-full bg-muted/50 px-4 py-2 text-sm font-medium text-muted-foreground backdrop-blur-sm border border-muted/30 shadow-sm hover:bg-muted/70 transition-colors cursor-default select-none">
               <span>Новая коллекция уже здесь</span>
               <ChevronRight className="h-4 w-4" />
             </div>
@@ -135,9 +135,9 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="flex flex-col gap-4 sm:flex-row sm:justify-center"
+            className="relative z-10 flex flex-col gap-4 sm:flex-row sm:justify-center"
           >
-            <Button asChild size="lg" className="group shadow-lg hover:shadow-primary/20">
+            <Button asChild size="lg" className="group shadow-lg hover:shadow-primary/20 min-h-[48px] touch-manipulation">
               <Link to="/register">
                 <span className="flex items-center">
                   Начать покупки
@@ -146,7 +146,7 @@ const Hero = () => {
               </Link>
             </Button>
             
-            <Button asChild variant="outline" size="lg" className="group shadow-sm">
+            <Button asChild variant="outline" size="lg" className="group shadow-sm min-h-[48px] touch-manipulation">
               <Link to="/login">
                 <span className="flex items-center">
                   Войти в аккаунт
@@ -161,12 +161,12 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.7 }}
-            className="mt-4 flex justify-center"
+            className="relative z-10 mt-6 flex justify-center"
           >
             <PWAInstallButton 
               variant="ghost" 
               size="sm" 
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground min-h-[44px] touch-manipulation"
             />
           </motion.div>
 
