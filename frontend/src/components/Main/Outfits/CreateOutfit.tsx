@@ -15,14 +15,6 @@ interface IndexState {
   [key: string]: number
 }
 
-const idFieldMap: Record<string, string> = {
-  top: 'top_ids',
-  bottom: 'bottom_ids',
-  footwear: 'footwear_ids',
-  accessory: 'accessories_ids',
-  fragrance: 'fragrances_ids',
-}
-
 const CreateOutfit = () => {
   const navigate = useNavigate()
   const { toast } = useToast()

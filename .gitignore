@@ -1,7 +1,46 @@
+# Node.js
 node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Env
 .env
+*.env
+
+# Certbot и SSL
 certbot/
 .ssl_attempt_timestamp
+
+# Nginx временные и резервные конфиги
 nginx/nginx.conf.backup
 nginx/nginx-simple.conf
 nginx/nginx-temp.conf
+
+# IDE / редакторы
+.vscode/
+.idea/
+
+# Логи
+*.log
+
+# OS файлы
+.DS_Store
+Thumbs.db
+
+# Docker
+**/.docker/
+**/docker-compose.override.yml
+
+# Миграции Alembic, если временные
+migrations/versions/__pycache__/
+
+# Бэкапы
+*.bak
+*.swp
+*.swo
+*~
