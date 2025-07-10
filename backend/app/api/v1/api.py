@@ -17,4 +17,32 @@ api_router.include_router(user_content_router)
 api_router.include_router(cart_router)
 api_router.include_router(outfits_router)
 api_router.include_router(items_router)
-api_router.include_router(catalog_router) 
+api_router.include_router(catalog_router)
+
+# Системный мониторинг
+@api_router.get("/system/pool-stats")
+async def get_database_pool_stats():
+    """Получить статистику пула соединений базы данных."""
+    from app.core.database import get_pool_stats
+    return get_pool_stats()
+
+@api_router.get("/system/health")
+async def system_health_check():
+    """Проверка здоровья системы."""
+    from app.core.database import get_pool_stats
+    from datetime import datetime
+    
+    pool_stats = get_pool_stats()
+    
+    # Проверяем состояние пула соединений
+    pool_healthy = (
+        pool_stats["checked_out"] < pool_stats["pool_size"] + pool_stats["overflow"] and
+        pool_stats["invalid"] == 0
+    )
+    
+    return {
+        "status": "healthy" if pool_healthy else "warning",
+        "timestamp": datetime.now().isoformat(),
+        "database_pool": pool_stats,
+        "pool_healthy": pool_healthy
+    } 

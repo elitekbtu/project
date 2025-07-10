@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = Field("", env="GOOGLE_CLIENT_SECRET")
     GOOGLE_REDIRECT_URI: str = Field("", env="GOOGLE_REDIRECT_URI")
 
+    # Database pool configuration
+    DB_POOL_SIZE: int = Field(20, env="DB_POOL_SIZE")
+    DB_MAX_OVERFLOW: int = Field(30, env="DB_MAX_OVERFLOW")
+    DB_POOL_TIMEOUT: int = Field(60, env="DB_POOL_TIMEOUT")
+    DB_POOL_RECYCLE: int = Field(3600, env="DB_POOL_RECYCLE")
+
     class Config:
         env_file = ".env"
         case_sensitive = True
