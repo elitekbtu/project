@@ -12,7 +12,7 @@ const BottomNav = () => {
   const location = useLocation()
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 bg-white border-t shadow-sm md:hidden min-h-[60px]">
+    <nav className="sticky bottom-0 inset-x-0 z-40 bg-white border-t shadow-sm md:hidden min-h-[60px]">
       <ul className="grid grid-cols-4">
         {tabs.map((t) => {
           const active = location.pathname.startsWith(t.to)
@@ -21,12 +21,12 @@ const BottomNav = () => {
             <li key={t.to}>
               <Link
                 to={t.to}
-                className={`flex flex-col items-center justify-center py-4 pb-[env(safe-area-inset-bottom)] text-xs font-medium transition-colors ${
+                className={`flex flex-col items-center justify-center gap-1 pt-2 pb-[env(safe-area-inset-bottom)] text-xs font-medium transition-colors ${
                   active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Icon className="h-5 w-5 mb-0.5" strokeWidth={active ? 2.5 : 1.5} />
-                {t.label}
+                <span className="-mt-0.5">{t.label}</span>
               </Link>
             </li>
           )
