@@ -10,7 +10,7 @@ API endpoints для управления каталогом товаров:
 """
 
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, status, HTTPException, Query, BackgroundTasks, Form
+from fastapi import APIRouter, Depends, status, HTTPException, Query, BackgroundTasks, Form, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from celery.result import AsyncResult
@@ -22,6 +22,7 @@ import logging
 from sqlalchemy.orm import Session
 
 from app.core.security import require_admin, get_current_user
+from app.core.rate_limiting import limiter, RATE_LIMITS
 from app.db.models.user import User
 from app.tasks.catalog_tasks import (
     parse_catalog_task,
@@ -71,8 +72,10 @@ class CatalogStats(BaseModel):
 # API Endpoints
 
 @router.post("/parse", response_model=Dict[str, str], status_code=status.HTTP_202_ACCEPTED, dependencies=[Depends(require_admin)])
+@limiter.limit(RATE_LIMITS["api"])
 async def start_catalog_parsing(
-    request: ParseRequest,
+    request: Request,
+    payload: ParseRequest,
     background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user)
 ):
@@ -85,17 +88,17 @@ async def start_catalog_parsing(
     try:
         # Запускаем цепочку задач в Celery (асинхронно): парсинг -> импорт
         chain_result = process_catalog_chain.delay(
-            query=request.query,
-            limit=request.limit,
-            domain=request.domain
+            query=payload.query,
+            limit=payload.limit,
+            domain=payload.domain
         )
         
         return {
             "message": "Парсинг каталога запущен",
             "task_id": chain_result.id,
-            "query": request.query,
-            "limit": str(request.limit),
-            "domain": request.domain,
+            "query": payload.query,
+            "limit": str(payload.limit),
+            "domain": payload.domain,
             "started_by": user.email,
             "status_url": f"/api/catalog/tasks/{chain_result.id}/status"
         }
@@ -107,7 +110,8 @@ async def start_catalog_parsing(
         )
 
 @router.get("/tasks/{task_id}/status", response_model=TaskStatus)
-async def get_task_status(task_id: str):
+@limiter.limit(RATE_LIMITS["api"])
+async def get_task_status(request: Request, task_id: str):
     """
     Получение статуса задачи
     
@@ -159,7 +163,8 @@ async def get_task_status(task_id: str):
         )
 
 @router.get("/tasks/{task_id}/result")
-async def get_task_result(task_id: str):
+@limiter.limit(RATE_LIMITS["api"])
+async def get_task_result(request: Request, task_id: str):
     """
     ВРЕМЕННЫЙ эндпоинт для получения полных результатов задачи парсинга
     
@@ -205,7 +210,8 @@ async def get_task_result(task_id: str):
         )
 
 @router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)])
-async def cancel_task(task_id: str):
+@limiter.limit(RATE_LIMITS["api"])
+async def cancel_task(request: Request, task_id: str):
     """
     Отмена выполняющейся задачи
     
@@ -222,7 +228,8 @@ async def cancel_task(task_id: str):
         )
 
 @router.get("/tasks", response_model=List[Dict[str, Any]], dependencies=[Depends(require_admin)])
-async def list_active_tasks():
+@limiter.limit(RATE_LIMITS["api"])
+async def list_active_tasks(request: Request):
     """
     Получение списка активных задач
     
@@ -259,7 +266,8 @@ async def list_active_tasks():
         )
 
 @router.get("/stats", response_model=CatalogStats)
-async def get_catalog_stats():
+@limiter.limit(RATE_LIMITS["api"])
+async def get_catalog_stats(request: Request):
     """
     Получение статистики каталога
     
@@ -321,7 +329,9 @@ async def get_catalog_stats():
         )
 
 @router.post("/parse-simple", response_model=Dict[str, str], dependencies=[Depends(require_admin)])
+@limiter.limit(RATE_LIMITS["api"])
 async def simple_parse_only(
+    request: Request,
     query: str = Query(..., description="Поисковый запрос"),
     limit: int = Query(10, description="Количество товаров", ge=1, le=50),
     domain: str = Query("kz", description="Домен", regex="^(ru|kz|by)$")
@@ -352,7 +362,8 @@ async def simple_parse_only(
         )
 
 @router.get("/health")
-async def catalog_health_check():
+@limiter.limit(RATE_LIMITS["api"])
+async def catalog_health_check(request: Request):
     """
     Проверка здоровья системы каталога
     
@@ -398,7 +409,8 @@ async def catalog_health_check():
         )
 
 @router.get("/queue-info", dependencies=[Depends(require_admin)])
-async def get_queue_info():
+@limiter.limit(RATE_LIMITS["api"])
+async def get_queue_info(request: Request):
     """
     Получение информации о очередях Celery
     
@@ -428,7 +440,8 @@ async def get_queue_info():
         )
 
 @router.post("/test-chain", response_model=Dict[str, str], dependencies=[Depends(require_admin)])
-async def test_catalog_chain():
+@limiter.limit(RATE_LIMITS["api"])
+async def test_catalog_chain(request: Request):
     """
     Тестовый запуск цепочки обработки каталога
     
@@ -457,7 +470,9 @@ async def test_catalog_chain():
         )
 
 @router.post("/test-parser", response_model=Dict[str, str])
+@limiter.limit(RATE_LIMITS["api"])
 async def test_parser_no_auth(
+    request: Request,
     query: str = Query("jeans", description="Поисковый запрос"),
     limit: int = Query(5, description="Количество товаров", ge=1, le=10),
     domain: str = Query("kz", description="Домен", regex="^(ru|kz|by)$")
@@ -489,7 +504,8 @@ async def test_parser_no_auth(
         )
 
 @router.get("/image-proxy")
-async def proxy_lamoda_image(url: str = Query(..., description="URL изображения Lamoda")):
+@limiter.limit(RATE_LIMITS["api"])
+async def proxy_lamoda_image(request: Request, url: str = Query(..., description="URL изображения Lamoda")):
     """
     Прокси для изображений Lamoda
     
@@ -588,7 +604,9 @@ async def generate_placeholder_image(text: str = "No Image"):
     )
 
 @router.post("/parse", dependencies=[Depends(require_admin)])
+@limiter.limit(RATE_LIMITS["api"])
 async def parse_catalog(
+    request: Request,
     query: str = Form(...),
     limit: int = Form(20),
     page: int = Form(1),

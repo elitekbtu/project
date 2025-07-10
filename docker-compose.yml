@@ -37,6 +37,16 @@ services:
       - DB_MAX_OVERFLOW=${DB_MAX_OVERFLOW:-30}
       - DB_POOL_TIMEOUT=${DB_POOL_TIMEOUT:-60}
       - DB_POOL_RECYCLE=${DB_POOL_RECYCLE:-3600}
+      # Rate limiting configuration
+      - RATE_LIMIT_DEFAULT=${RATE_LIMIT_DEFAULT:-100/minute}
+      - RATE_LIMIT_AUTH=${RATE_LIMIT_AUTH:-10/minute}
+      - RATE_LIMIT_API=${RATE_LIMIT_API:-1000/hour}
+      - RATE_LIMIT_UPLOAD=${RATE_LIMIT_UPLOAD:-10/minute}
+      - RATE_LIMIT_ADMIN=${RATE_LIMIT_ADMIN:-1000/minute}
+      # DDoS protection configuration
+      - DDOS_MAX_REQUESTS_PER_SECOND=${DDOS_MAX_REQUESTS_PER_SECOND:-10}
+      - DDOS_MAX_REQUESTS_PER_MINUTE=${DDOS_MAX_REQUESTS_PER_MINUTE:-200}
+      - DDOS_BLOCK_DURATION=${DDOS_BLOCK_DURATION:-300}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health || exit 1"]
       interval: 10s

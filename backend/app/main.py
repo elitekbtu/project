@@ -10,11 +10,19 @@ from app.api.v1.endpoints.profile.schemas import ProfileOut
 from app.core.config import get_settings
 from app.core.database import Base, engine, log_pool_stats
 from app.core.security import get_current_user, get_password_hash
+from app.core.rate_limiting import setup_rate_limiting
+from app.core.security_middleware import DDoSProtectionMiddleware
 from app.db.models.user import User
 
 settings = get_settings()
 
 app = FastAPI(title=settings.PROJECT_NAME)
+
+# Настройка rate limiting
+setup_rate_limiting(app)
+
+# Добавляем DDoS protection middleware
+app.add_middleware(DDoSProtectionMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, status, Query, HTTPException
+from fastapi import APIRouter, Depends, status, Query, HTTPException, Request
 from sqlalchemy.orm import Session
 import os
 import logging
@@ -7,6 +7,7 @@ import logging
 from app.core.database import get_db
 from app.core.security import get_current_user, get_current_user_optional, require_admin
 from app.core.config import get_settings
+from app.core.rate_limiting import limiter, RATE_LIMITS
 from app.db.models.user import User
 from app.db.models.item import Item
 
@@ -22,12 +23,15 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/", response_model=OutfitOut, status_code=status.HTTP_201_CREATED)
-def create_outfit(outfit_in: OutfitCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["api"])
+def create_outfit(request: Request, outfit_in: OutfitCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.create_outfit(db, user, outfit_in)
 
 
 @router.get("/", response_model=List[OutfitOut])
+@limiter.limit(RATE_LIMITS["api"])
 def list_outfits(
+    request: Request,
     skip: int = 0,
     limit: int = 100,
     q: Optional[str] = Query(None),
@@ -42,32 +46,39 @@ def list_outfits(
 
 
 @router.get("/favorites", response_model=List[OutfitOut])
-def list_favorite_outfits(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["api"])
+def list_favorite_outfits(request: Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.list_favorite_outfits(db, user)
 
 
 @router.get("/history", response_model=List[OutfitOut])
-def viewed_outfits(limit: int = 50, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["api"])
+def viewed_outfits(request: Request, limit: int = 50, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.viewed_outfits(db, user, limit)
 
 
 @router.delete("/history", status_code=status.HTTP_204_NO_CONTENT)
-def clear_outfit_view_history(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["api"])
+def clear_outfit_view_history(request: Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.clear_outfit_view_history(db, user)
 
 
 @router.get("/trending", response_model=List[OutfitOut])
-def trending_outfits(limit: int = 20, db: Session = Depends(get_db)):
+@limiter.limit(RATE_LIMITS["api"])
+def trending_outfits(request: Request, limit: int = 20, db: Session = Depends(get_db)):
     return service.trending_outfits(db, limit)
 
 
 @router.get("/{outfit_id}", response_model=OutfitOut)
-def get_outfit(outfit_id: int, db: Session = Depends(get_db), user: Optional[User] = Depends(get_current_user_optional)):
+@limiter.limit(RATE_LIMITS["api"])
+def get_outfit(request: Request, outfit_id: int, db: Session = Depends(get_db), user: Optional[User] = Depends(get_current_user_optional)):
     return service.get_outfit(db, outfit_id, user)
 
 
 @router.put("/{outfit_id}", response_model=OutfitOut)
+@limiter.limit(RATE_LIMITS["api"])
 def update_outfit(
+    request: Request,
     outfit_id: int,
     outfit_in: OutfitUpdate,
     db: Session = Depends(get_db),
@@ -77,32 +88,39 @@ def update_outfit(
 
 
 @router.delete("/{outfit_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_outfit(outfit_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["api"])
+def delete_outfit(request: Request, outfit_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.delete_outfit(db, user, outfit_id)
 
 
 @router.post("/{outfit_id}/favorite", status_code=status.HTTP_200_OK)
-def toggle_favorite_outfit(outfit_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["api"])
+def toggle_favorite_outfit(request: Request, outfit_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.toggle_favorite_outfit(db, user, outfit_id)
 
 
 @router.post("/{outfit_id}/comments", response_model=OutfitCommentOut, status_code=status.HTTP_201_CREATED)
-def add_outfit_comment(outfit_id: int, payload: OutfitCommentCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["api"])
+def add_outfit_comment(request: Request, outfit_id: int, payload: OutfitCommentCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.add_outfit_comment(db, user, outfit_id, payload)
 
 
 @router.get("/{outfit_id}/comments", response_model=List[OutfitCommentOut])
-def list_outfit_comments(outfit_id: int, db: Session = Depends(get_db)):
+@limiter.limit(RATE_LIMITS["api"])
+def list_outfit_comments(request: Request, outfit_id: int, db: Session = Depends(get_db)):
     return service.list_outfit_comments(db, outfit_id)
 
 
 @router.post("/{outfit_id}/comments/{comment_id}/like", status_code=status.HTTP_200_OK)
-def like_outfit_comment(comment_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["api"])
+def like_outfit_comment(request: Request, comment_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.like_outfit_comment(db, user, comment_id)
 
 
 @router.delete("/{outfit_id}/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit(RATE_LIMITS["api"])
 def delete_outfit_comment(
+    request: Request,
     comment_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -111,7 +129,9 @@ def delete_outfit_comment(
 
 
 @router.post("/analyze-item/{item_id}", dependencies=[Depends(require_admin)])
+@limiter.limit(RATE_LIMITS["api"])
 async def analyze_item_categorization(
+    request: Request,
     item_id: int,
     db: Session = Depends(get_db)
 ):
@@ -184,7 +204,9 @@ async def analyze_item_categorization(
 
 
 @router.post("/batch-analyze", dependencies=[Depends(require_admin)])
+@limiter.limit(RATE_LIMITS["api"])
 async def batch_analyze_items(
+    request: Request,
     limit: int = Query(100, description="Количество товаров для анализа"),
     category_filter: Optional[str] = Query(None, description="Фильтр по категории"),
     db: Session = Depends(get_db)
@@ -284,8 +306,10 @@ async def batch_analyze_items(
 
 
 @router.post("/virtual-tryon", response_model=VirtualTryOnResponse)
+@limiter.limit(RATE_LIMITS["upload"])
 async def generate_virtual_tryon(
-    request: VirtualTryOnRequest,
+    request: Request,
+    payload: VirtualTryOnRequest,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
@@ -300,14 +324,14 @@ async def generate_virtual_tryon(
         
         # Группируем предметы по категориям
         items_by_category = {}
-        for item in request.outfit_items:
+        for item in payload.outfit_items:
             category = item.get('category', 'unknown')
             if category not in items_by_category:
                 items_by_category[category] = []
             items_by_category[category].append(item)
         
         logger.info(f"📊 Предметы по категориям: {items_by_category}")
-        logger.info(f"📸 Исходное изображение: {request.human_image_url}")
+        logger.info(f"📸 Исходное изображение: {payload.human_image_url}")
         
         # Создаем список предметов для виртуальной примерки
         # Берем только один предмет из каждой категории
@@ -329,7 +353,7 @@ async def generate_virtual_tryon(
         
         # Генерируем виртуальную примерку
         result_image_url = await virtual_tryon_service.generate_virtual_tryon_outfit(
-            human_image_url=request.human_image_url,
+            human_image_url=payload.human_image_url,
             outfit_items=outfit_items
         )
         
@@ -342,7 +366,7 @@ async def generate_virtual_tryon(
     except Exception as e:
         logger.error(f"❌ Ошибка при генерации виртуальной примерки: {e}")
         return VirtualTryOnResponse(
-            result_image_url=request.human_image_url,
+            result_image_url=payload.human_image_url,
             success=False,
             message=f"Ошибка при генерации виртуальной примерки: {str(e)}"
         )
