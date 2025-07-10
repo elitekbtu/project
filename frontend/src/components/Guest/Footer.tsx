@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Heart } from 'lucide-react'
+import { Instagram, Linkedin, Github } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 const GuestFooter = () => {
@@ -79,6 +79,33 @@ const GuestFooter = () => {
                 </Link>
               </li>
             </ul>
+            {/* Social Media Icons */}
+            <div className="mt-4 flex gap-3">
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Linkedin className="h-5 w-5" />
+              </a>
+              <a
+                href="https://github.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Github className="h-5 w-5" />
+              </a>
+            </div>
           </motion.div>
         </div>
 
@@ -89,9 +116,6 @@ const GuestFooter = () => {
         >
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
             © {currentYear} TRC. Все права защищены.
-          </div>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            Создано с <Heart className="h-4 w-4 fill-primary text-primary" /> для стиля
           </div>
         </motion.div>
       </div>
