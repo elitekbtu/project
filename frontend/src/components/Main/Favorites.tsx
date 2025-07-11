@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { listFavoriteItems } from '../../api/items'
 import { listFavoriteOutfits } from '../../api/outfits'
@@ -27,16 +28,38 @@ const Favorites = () => {
   const [items, setItems] = useState<Item[]>([])
   const [outfits, setOutfits] = useState<Outfit[]>([])
   const [loading, setLoading] = useState(true)
+  const [itemsPage, setItemsPage] = useState(1)
+  const [outfitsPage, setOutfitsPage] = useState(1)
+  const [itemsHasMore, setItemsHasMore] = useState(true)
+  const [outfitsHasMore, setOutfitsHasMore] = useState(true)
+
+  const fetchItems = async (page: number, append = false) => {
+    try {
+      const data = await listFavoriteItems(page)
+      setItems(prev => append ? [...prev, ...data] : data)
+      setItemsHasMore(data.length === 20)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const fetchOutfits = async (page: number, append = false) => {
+    try {
+      const data = await listFavoriteOutfits(page)
+      setOutfits(prev => append ? [...prev, ...data] : data)
+      setOutfitsHasMore(data.length === 20)
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [itemsResp, outfitsResp] = await Promise.all([
-          listFavoriteItems(),
-          listFavoriteOutfits(),
+        await Promise.all([
+          fetchItems(1),
+          fetchOutfits(1),
         ])
-        setItems(itemsResp)
-        setOutfits(outfitsResp)
       } catch (err) {
         console.error(err)
       } finally {
@@ -45,6 +68,54 @@ const Favorites = () => {
     }
     fetchData()
   }, [])
+
+  // Infinite scroll for items
+  const itemsObserver = useRef<IntersectionObserver | null>(null)
+  const lastItemRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (loading) return
+      if (!itemsHasMore) return
+      if (itemsObserver.current) itemsObserver.current.disconnect()
+      itemsObserver.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          setItemsPage(prev => prev + 1)
+        }
+      })
+      if (node) itemsObserver.current.observe(node)
+    },
+    [loading, itemsHasMore],
+  )
+
+  // Infinite scroll for outfits
+  const outfitsObserver = useRef<IntersectionObserver | null>(null)
+  const lastOutfitRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (loading) return
+      if (!outfitsHasMore) return
+      if (outfitsObserver.current) outfitsObserver.current.disconnect()
+      outfitsObserver.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          setOutfitsPage(prev => prev + 1)
+        }
+      })
+      if (node) outfitsObserver.current.observe(node)
+    },
+    [loading, outfitsHasMore],
+  )
+
+  // Load more items
+  useEffect(() => {
+    if (itemsPage > 1) {
+      fetchItems(itemsPage, true)
+    }
+  }, [itemsPage])
+
+  // Load more outfits
+  useEffect(() => {
+    if (outfitsPage > 1) {
+      fetchOutfits(outfitsPage, true)
+    }
+  }, [outfitsPage])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -84,8 +155,12 @@ const Favorites = () => {
             animate="visible"
             className="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
           >
-            {items.map((item) => (
-              <motion.div key={item.id} variants={itemVariants}>
+            {items.map((item, index) => (
+              <motion.div
+                key={item.id}
+                variants={itemVariants}
+                ref={index === items.length - 1 ? lastItemRef : null}
+              >
                 <Card className="group overflow-hidden transition-all hover:shadow-lg">
                   <Link to={`/items/${item.id}`}>
                     <div className="relative aspect-[3/4] overflow-hidden">
@@ -130,11 +205,12 @@ const Favorites = () => {
         <>
           <h2 className="mb-4 text-xl font-semibold">Образы</h2>
           <div className="grid gap-4 md:grid-cols-3">
-            {outfits.map((o) => (
+            {outfits.map((o, index) => (
               <Link
                 key={o.id}
                 to={`/outfits/${o.id}`}
                 className="block rounded-md border p-4 hover:shadow"
+                ref={index === outfits.length - 1 ? lastOutfitRef : null}
               >
                 <h3 className="text-lg font-medium">{o.name}</h3>
                 <p className="text-sm text-gray-500">Стиль: {o.style}</p>

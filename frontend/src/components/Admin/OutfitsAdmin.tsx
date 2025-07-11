@@ -17,13 +17,23 @@ interface Outfit {
 const OutfitsAdmin = () => {
   const [outfits, setOutfits] = useState<Outfit[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [search, setSearch] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const { toast } = useToast()
 
-  const fetchOutfits = async () => {
+  const fetchOutfits = async (pageToLoad = 1, append = false, q?: string) => {
     try {
-      const resp = await api.get<Outfit[]>('/api/outfits/')
-      setOutfits(resp.data)
+      if (append) setLoadingMore(true)
+      else setLoading(true)
+      const params: any = { page: pageToLoad }
+      if (q) params.q = q
+      const resp = await api.get<Outfit[]>('/api/outfits/', { params })
+      setOutfits(prev => append ? [...prev, ...resp.data] : resp.data)
+      setHasMore(resp.data.length === 20)
     } catch (err) {
       toast({
         variant: 'destructive',
@@ -32,12 +42,27 @@ const OutfitsAdmin = () => {
       })
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
   }
 
   useEffect(() => {
-    fetchOutfits()
-  }, [])
+    setPage(1)
+    fetchOutfits(1, false, searchQuery)
+  }, [searchQuery])
+
+  useEffect(() => {
+    if (page === 1) return
+    fetchOutfits(page, true, searchQuery)
+  }, [page])
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    setPage(1)
+    setOutfits([])
+    setHasMore(true)
+    setSearchQuery(search)
+  }
 
   const handleDelete = async (id: number) => {
     if (!confirm('Вы уверены, что хотите удалить этот образ?')) return
@@ -79,6 +104,16 @@ const OutfitsAdmin = () => {
     >
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Управление образами</h1>
+        <form onSubmit={handleSearch} className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Поиск по названию..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="border rounded px-2 py-1"
+          />
+          <Button type="submit">Поиск</Button>
+        </form>
         <Button asChild>
           <Link to="/admin/outfits/new" className="flex items-center gap-2">
             <PlusCircle className="h-4 w-4" />
@@ -162,6 +197,14 @@ const OutfitsAdmin = () => {
           </tbody>
         </table>
       </div>
+      {/* Кнопка загрузки */}
+      {!loading && hasMore && (
+        <div className="flex justify-center my-4">
+          <Button onClick={() => setPage(p => p + 1)} disabled={loadingMore}>
+            {loadingMore ? 'Загрузка...' : 'Загрузить ещё'}
+          </Button>
+        </div>
+      )}
     </motion.div>
   )
 }

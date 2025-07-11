@@ -4,6 +4,7 @@ from typing import List, Optional
 from fastapi import UploadFile, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_, func, desc
+from sqlalchemy.orm import selectinload
 
 from app.db.models.item import Item
 from app.db.models.user import User
@@ -115,7 +116,14 @@ async def create_item(
 
 
 def list_items(db: Session, filters: dict, skip: int = 0, limit: int = 100, user_id: Optional[int] = None, current_user: Optional[User] = None):
+    print(f"🔍 list_items called: skip={skip}, limit={limit}, filters={filters}")
     query = db.query(Item)
+
+    # Eager load images и variants для всех items одной пачкой
+    query = query.options(
+        selectinload(Item.images),
+        selectinload(Item.variants),
+    )
 
     # Dynamically add favorite status if user is logged in
     if user_id:
@@ -170,6 +178,7 @@ def list_items(db: Session, filters: dict, skip: int = 0, limit: int = 100, user
 
     # Paginate and format results
     paginated_results = query.offset(skip).limit(limit).all()
+    print(f"✅ list_items result: {len(paginated_results)} items returned")
 
     if user_id:
         # If user is logged in, result is a tuple (Item, is_favorite)
@@ -263,22 +272,26 @@ def items_by_collection(db: Session, name: str):
     return [ItemOut.from_orm(i) for i in items]
 
 
-def list_favorite_items(db: Session, user: User):
-    return user.favorites.all()
+def list_favorite_items(db: Session, user: User, skip: int = 0, limit: int = 20):
+    """Return paginated favorite items for the user."""
+    query = user.favorites.order_by(desc(Item.created_at))  # type: ignore
+    return query.offset(skip).limit(limit).all()
 
 
-def viewed_items(db: Session, user: User, limit: int = 50):
-    views = (
+def viewed_items(db: Session, user: User, skip: int = 0, limit: int = 20):
+    """Return paginated viewed items history for the user (most recent first)."""
+    views_query = (
         db.query(UserView)
         .filter(UserView.user_id == user.id)
         .order_by(desc(UserView.viewed_at))
-        .limit(limit)
-        .all()
     )
+    views = views_query.offset(skip).limit(limit).all()
     item_ids = [v.item_id for v in views]
     if not item_ids:
         return []
-    return db.query(Item).filter(Item.id.in_(item_ids)).all()
+    # Preserve order based on views sequence
+    items_map = {item.id: item for item in db.query(Item).filter(Item.id.in_(item_ids)).all()}
+    return [items_map[iid] for iid in item_ids if iid in items_map]
 
 
 def clear_view_history(db: Session, user: User):

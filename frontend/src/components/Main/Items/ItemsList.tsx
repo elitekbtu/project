@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import api from '../../../api/client'
+import { listItems } from '../../../api/items'
 import { Card, CardContent } from '../../ui/card'
 import { Input } from '../../ui/input'
 import { Button } from '../../ui/button'
@@ -25,29 +25,71 @@ interface Item {
 const ItemsList = () => {
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
   const { isFavorite, toggleFavorite } = useFavorites()
 
-  const fetchItems = async (q?: string) => {
-    try {
-      setLoading(true)
-      const resp = await api.get<Item[]>('/api/items/', { params: { q } })
-      setItems(resp.data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+  // Функция для загрузки данных
+  const fetchItems = async (pageToLoad: number, q?: string) => {
+    const params: any = { page: pageToLoad }
+    if (q !== undefined && q !== null && q !== '') params.q = q
+    const data = await listItems(params)
+    return data
   }
 
+  // Загрузка первой страницы или нового поиска
   useEffect(() => {
-    fetchItems()
-  }, [])
+    setLoading(true)
+    setItems([])
+    setHasMore(true)
+    setPage(1)
+    fetchItems(1, search).then(data => {
+      setItems(data)
+      setHasMore(data.length === 20)
+      setLoading(false)
+    })
+  }, [search])
+
+  // Загрузка следующих страниц
+  useEffect(() => {
+    if (page === 1) return
+    setLoadingMore(true)
+    fetchItems(page, search).then(data => {
+      setItems(prev => [...prev, ...data])
+      setHasMore(data.length === 20)
+      setLoadingMore(false)
+    })
+  }, [page])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    fetchItems(search)
+    setSearch(search) // триггерит useEffect выше
   }
+
+  // Infinite scroll observer
+  const observer = useRef<IntersectionObserver | null>(null)
+  const lastItemRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (loading) return
+      if (!hasMore) return
+      if (observer.current) observer.current.disconnect()
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          setPage((prev) => prev + 1)
+        }
+      })
+      if (node) observer.current.observe(node)
+    },
+    [loading, hasMore],
+  )
+
+  // Fetch next page when page state changes (except first, already fetched)
+  useEffect(() => {
+    if (page === 1) return
+    fetchItems(page, search)
+  }, [page])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -141,63 +183,96 @@ const ItemsList = () => {
           animate="visible"
           className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
         >
-          {items.map((item) => (
-            <motion.div key={item.id} variants={itemVariants}>
-              <Card className="group overflow-hidden transition-all hover:shadow-lg">
-                <Link to={`/items/${item.id}`}>
-                  <div className="relative aspect-[3/4] overflow-hidden">
-                    {item.image_urls && item.image_urls.length > 0 ? (
-                      <ImageCarousel images={item.image_urls} className="transition-transform duration-500 group-hover:scale-105" />
-                    ) : (
-                      <ItemImage
-                        src={item.image_url}
-                        alt={item.name}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        fallbackClassName="h-full w-full"
-                      />
-                    )}
-                    <div className="absolute top-3 right-3 opacity-0 transition-opacity group-hover:opacity-100">
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="h-8 w-8 rounded-full"
-                        onClick={async (e) => {
-                          e.preventDefault()
-                          await toggleFavorite(item.id)
-                        }}
-                      >
-                        <Heart
-                          className={`h-4 w-4 ${isFavorite(item.id) ? 'fill-primary text-primary' : ''}`}
+          {items.map((item, idx) => {
+            const refProp = idx === items.length - 1 ? { ref: lastItemRef } : {}
+            return (
+              <motion.div key={item.id} variants={itemVariants} {...refProp}>
+                <Card className="group overflow-hidden transition-all hover:shadow-lg">
+                  <Link to={`/items/${item.id}`}>
+                    <div className="relative aspect-[3/4] overflow-hidden">
+                      {item.image_urls && item.image_urls.length > 0 ? (
+                        <ImageCarousel images={item.image_urls} className="transition-transform duration-500 group-hover:scale-105" />
+                      ) : (
+                        <ItemImage
+                          src={item.image_url}
+                          alt={item.name}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          fallbackClassName="h-full w-full"
                         />
-                      </Button>
-                    </div>
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="mb-2">
-                      {item.category && (
-                        <Badge variant="outline" className="mb-2 text-xs capitalize">
-                          {CATEGORY_LABELS[item.category] ?? item.category}
-                        </Badge>
                       )}
-                      <h3 className="font-medium leading-tight" title={item.name}>
-                        {item.name}
-                      </h3>
-                      {item.brand && (
-                        <p className="text-sm text-muted-foreground">{item.brand}</p>
-                      )}
+                      <div className="absolute top-3 right-3 opacity-0 transition-opacity group-hover:opacity-100">
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          className="h-8 w-8 rounded-full"
+                          onClick={async (e) => {
+                            e.preventDefault()
+                            await toggleFavorite(item.id)
+                          }}
+                        >
+                          <Heart
+                            className={`h-4 w-4 ${isFavorite(item.id) ? 'fill-primary text-primary' : ''}`}
+                          />
+                        </Button>
+                      </div>
                     </div>
-                    {(() => {
-                      const price = getDisplayPrice(item)
-                      return price !== undefined ? (
-                        <p className="font-semibold">{price.toLocaleString()} ₸</p>
-                      ) : null
-                    })()}
-                  </CardContent>
-                </Link>
-              </Card>
-            </motion.div>
-          ))}
+                    <CardContent className="p-4">
+                      <div className="mb-2">
+                        {item.category && (
+                          <Badge variant="outline" className="mb-2 text-xs capitalize">
+                            {CATEGORY_LABELS[item.category] ?? item.category}
+                          </Badge>
+                        )}
+                        <h3 className="font-medium leading-tight" title={item.name}>
+                          {item.name}
+                        </h3>
+                        {item.brand && (
+                          <p className="text-sm text-muted-foreground">{item.brand}</p>
+                        )}
+                      </div>
+                      {(() => {
+                        const price = getDisplayPrice(item)
+                        return price !== undefined ? (
+                          <p className="font-semibold">{price.toLocaleString()} ₸</p>
+                        ) : null
+                      })()}
+                    </CardContent>
+                  </Link>
+                </Card>
+              </motion.div>
+            )
+          })}
         </motion.div>
+      )}
+
+      {/* Loading More Indicator */}
+      {loadingMore && (
+        <div className="mt-8 flex justify-center">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+            <span className="text-sm text-muted-foreground">Загрузка...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Load More Button */}
+      {!loading && hasMore && (
+        <div className="mt-8 flex justify-center">
+          <Button 
+            onClick={() => setPage(prev => prev + 1)}
+            disabled={loadingMore}
+            variant="outline"
+          >
+            {loadingMore ? 'Загрузка...' : `Загрузить ещё (${page} → ${page + 1})`}
+          </Button>
+        </div>
+      )}
+
+      {/* End of Results */}
+      {!loading && !loadingMore && !hasMore && items.length > 0 && (
+        <div className="mt-8 text-center">
+          <p className="text-sm text-muted-foreground">Больше товаров нет</p>
+        </div>
       )}
 
       {/* Empty State */}

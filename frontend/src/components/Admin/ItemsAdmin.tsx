@@ -15,13 +15,23 @@ interface Item {
 const ItemsAdmin = () => {
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [search, setSearch] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const { toast } = useToast()
 
-  const fetchItems = async () => {
+  const fetchItems = async (pageToLoad = 1, append = false, q?: string) => {
     try {
-      const resp = await api.get<Item[]>('/api/items/')
-      setItems(resp.data)
+      if (append) setLoadingMore(true)
+      else setLoading(true)
+      const params: any = { page: pageToLoad }
+      if (q) params.q = q
+      const resp = await api.get<Item[]>('/api/items/', { params })
+      setItems(prev => append ? [...prev, ...resp.data] : resp.data)
+      setHasMore(resp.data.length === 20)
     } catch (err) {
       toast({
         variant: 'destructive',
@@ -30,12 +40,27 @@ const ItemsAdmin = () => {
       })
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
   }
 
   useEffect(() => {
-    fetchItems()
-  }, [])
+    setPage(1)
+    fetchItems(1, false, searchQuery)
+  }, [searchQuery])
+
+  useEffect(() => {
+    if (page === 1) return
+    fetchItems(page, true, searchQuery)
+  }, [page])
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    setPage(1)
+    setItems([])
+    setHasMore(true)
+    setSearchQuery(search)
+  }
 
   const handleDelete = async (id: number) => {
     if (!confirm('Вы уверены, что хотите удалить эту вещь?')) return
@@ -77,6 +102,16 @@ const ItemsAdmin = () => {
     >
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Управление вещами</h1>
+        <form onSubmit={handleSearch} className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Поиск по названию..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="border rounded px-2 py-1"
+          />
+          <Button type="submit">Поиск</Button>
+        </form>
         <Button asChild>
           <Link to="/admin/items/new" className="flex items-center gap-2">
             <PlusCircle className="h-4 w-4" />
@@ -154,6 +189,14 @@ const ItemsAdmin = () => {
           </tbody>
         </table>
       </div>
+      {/* Кнопка загрузки */}
+      {!loading && hasMore && (
+        <div className="flex justify-center my-4">
+          <Button onClick={() => setPage(p => p + 1)} disabled={loadingMore}>
+            {loadingMore ? 'Загрузка...' : 'Загрузить ещё'}
+          </Button>
+        </div>
+      )}
     </motion.div>
   )
 }

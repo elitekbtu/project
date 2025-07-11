@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -14,8 +14,14 @@ router = APIRouter(prefix="/users", tags=["Users"], dependencies=[Depends(requir
 
 @router.get("/", response_model=list[UserOut])
 @limiter.limit(RATE_LIMITS["api"])
-def list_users(request: Request, db: Session = Depends(get_db)):
-    return service.list_users(db)
+def list_users(
+    request: Request,
+    page: int = Query(1, ge=1),
+    db: Session = Depends(get_db),
+):
+    from app.core.pagination import get_pagination
+    skip, limit = get_pagination(page)
+    return service.list_users(db, skip, limit)
 
 
 @router.get("/{user_id}", response_model=UserOut)

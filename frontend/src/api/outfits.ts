@@ -10,8 +10,7 @@ import {
 } from './schemas'
 
 export interface ListOutfitsParams {
-  skip?: number
-  limit?: number
+  page?: number
   q?: string
   style?: string
   collection?: string
@@ -57,15 +56,15 @@ export const toggleFavoriteOutfit = async (id: number) => {
   await api.post(`/api/outfits/${id}/favorite`)
 }
 
-export const listFavoriteOutfits = async () => {
-  const resp = await api.get<OutfitOut[]>('/api/outfits/favorites')
+export const listFavoriteOutfits = async (page = 1) => {
+  const resp = await api.get<OutfitOut[]>('/api/outfits/favorites', { params: { page } })
   return resp.data
 }
 
 // ---------- View History ----------
 
-export const viewedOutfits = async (limit = 50) => {
-  const resp = await api.get<OutfitOut[]>('/api/outfits/history', { params: { limit } })
+export const viewedOutfits = async (page = 1) => {
+  const resp = await api.get<OutfitOut[]>('/api/outfits/history', { params: { page } })
   return resp.data
 }
 

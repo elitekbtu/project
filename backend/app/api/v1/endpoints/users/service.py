@@ -8,8 +8,8 @@ from app.db.models.outfit import Outfit
 from .schemas import UserCreateAdmin, UserUpdateAdmin
 
 
-def list_users(db: Session) -> List[User]:
-    return db.query(User).all()
+def list_users(db: Session, skip: int = 0, limit: int = 20) -> List[User]:
+    return db.query(User).offset(skip).limit(limit).all()
 
 
 def get_user(db: Session, user_id: int) -> User:

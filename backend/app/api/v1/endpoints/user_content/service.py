@@ -42,22 +42,26 @@ async def toggle_favorite(db: Session, user_id: int, item_id: int, current_user:
         return {"detail": "Added to favorites"}
 
 
-async def list_favorites(db: Session, user_id: int, current_user: User) -> List[Item]:
+async def list_favorites(db: Session, user_id: int, skip: int, limit: int, current_user: User) -> List[Item]:
     _check_access(user_id, current_user)
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return user.favorites.all()
+    query = user.favorites.order_by(desc(Item.created_at))  # type: ignore
+    return query.offset(skip).limit(limit).all()
 
 
-async def user_history(db: Session, user_id: int, limit: int, current_user: User) -> List[Item]:
+async def user_history(db: Session, user_id: int, skip: int, limit: int, current_user: User) -> List[Item]:
     _check_access(user_id, current_user)
 
-    sub = (
-        db.query(UserView.item_id)
+    views_query = (
+        db.query(UserView.item_id, UserView.viewed_at)
         .filter(UserView.user_id == user_id)
         .order_by(desc(UserView.viewed_at))
-        .limit(limit)
-        .subquery()
     )
-    return db.query(Item).join(sub, Item.id == sub.c.item_id).all() 
+    views = views_query.offset(skip).limit(limit).all()
+    item_ids = [v.item_id for v in views]
+    if not item_ids:
+        return []
+    items_map = {i.id: i for i in db.query(Item).filter(Item.id.in_(item_ids)).all()}
+    return [items_map[iid] for iid in item_ids if iid in items_map] 

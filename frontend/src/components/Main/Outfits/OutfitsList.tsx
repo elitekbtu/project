@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import api from '../../../api/client'
+import { listOutfits } from '../../../api/outfits'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
 import { Card, CardContent } from '../../ui/card'
 import { Search, Filter, Sparkles } from 'lucide-react'
 import { type OutfitOut } from '../../../api/schemas'
+import { useFavorites } from '../../../context/FavoritesContext'
 
 interface OutfitPreview {
   id: number
@@ -14,57 +15,72 @@ interface OutfitPreview {
   style: string
   total_price?: number | null
   image_url?: string | null
+  items?: any[] // Added for items
+  is_favorite?: boolean // Added for favorite status
 }
 
 const OutfitsList = () => {
   const [outfits, setOutfits] = useState<OutfitPreview[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const { isFavorite, toggleFavorite } = useFavorites()
 
-  const fetchOutfits = async (q?: string) => {
-    setLoading(true)
-    try {
-      const resp = await api.get<OutfitOut[]>('/api/outfits/', { params: { q } })
-      // Map basic fields first
-      const basic: OutfitPreview[] = resp.data.map((o) => ({
-        id: o.id,
-        name: o.name,
-        style: o.style,
-        total_price: o.total_price,
-        image_url: o.tryon_image_url || undefined,
-      }))
-      setOutfits(basic)
-
-      // Fetch details in background to get image preview (first top image)
-      const promises = resp.data.map((o) => api.get<OutfitOut>(`/api/outfits/${o.id}`))
-      const details = await Promise.allSettled(promises)
-      setOutfits((prev) =>
-        prev.map((p) => {
-          const det = details.find((d) => d.status === 'fulfilled' && (d as any).value.data.id === p.id) as any
-          if (det && det.status === 'fulfilled') {
-            const data: OutfitOut = det.value.data
-            // Используем tryon_image_url, если есть, иначе первую вещь
-            const previewUrl = data.tryon_image_url || data.top?.[0]?.image_url || data.bottom?.[0]?.image_url || data.footwear?.[0]?.image_url || data.accessory?.[0]?.image_url || null
-            return { ...p, image_url: previewUrl }
-          }
-          return p
-        }),
-      )
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+  // Функция для загрузки данных
+  const fetchOutfits = async (pageToLoad: number, q?: string) => {
+    const params: any = { page: pageToLoad }
+    if (q !== undefined && q !== null && q !== '') params.q = q
+    const data = await listOutfits(params)
+    return data
   }
 
+  // Загрузка первой страницы или нового поиска
   useEffect(() => {
-    fetchOutfits()
-  }, [])
+    setLoading(true)
+    setOutfits([])
+    setHasMore(true)
+    setPage(1)
+    fetchOutfits(1, search).then(data => {
+      setOutfits(data)
+      setHasMore(data.length === 20)
+      setLoading(false)
+    })
+  }, [search])
+
+  // Загрузка следующих страниц
+  useEffect(() => {
+    if (page === 1) return
+    setLoadingMore(true)
+    fetchOutfits(page, search).then(data => {
+      setOutfits(prev => [...prev, ...data])
+      setHasMore(data.length === 20)
+      setLoadingMore(false)
+    })
+  }, [page])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    fetchOutfits(search)
+    setSearch(search) // триггерит useEffect выше
   }
+
+  // Infinite scroll observer
+  const observer = useRef<IntersectionObserver | null>(null)
+  const lastItemRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (loading) return
+      if (!hasMore) return
+      if (observer.current) observer.current.disconnect()
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          setPage((prev) => prev + 1)
+        }
+      })
+      if (node) observer.current.observe(node)
+    },
+    [loading, hasMore],
+  )
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -154,42 +170,45 @@ const OutfitsList = () => {
           animate="visible"
           className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
         >
-          {outfits.map((o) => (
-            <motion.div key={o.id} variants={itemVariants}>
-              <Card className="group overflow-hidden transition-all hover:shadow-lg rounded-lg">
-                <Link to={`/outfits/${o.id}`}>
-                  <div className="relative aspect-[3/4] overflow-hidden">
-                    {o.image_url ? (
-                      <img
-                        src={o.image_url.startsWith('/') ? `${window.location.origin}${o.image_url}` : o.image_url}
-                        alt={o.name}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        onError={(e) => {
-                          console.error('Ошибка загрузки изображения образа:', o.image_url)
-                          e.currentTarget.src = '/maneken.png'
-                        }}
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-muted">
+          {outfits.map((o, idx) => {
+            const refProp = idx === outfits.length - 1 ? { ref: lastItemRef } : {}
+            return (
+              <motion.div key={o.id} variants={itemVariants} {...refProp}>
+                <Card className="group overflow-hidden transition-all hover:shadow-lg rounded-lg">
+                  <Link to={`/outfits/${o.id}`}>
+                    <div className="relative aspect-[3/4] overflow-hidden">
+                      {o.image_url ? (
                         <img
-                          src="/maneken.png"
-                          alt="Манекен"
-                          className="h-2/3 w-2/3 object-contain opacity-70"
+                          src={o.image_url.startsWith('/') ? `${window.location.origin}${o.image_url}` : o.image_url}
+                          alt={o.name}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          onError={(e) => {
+                            console.error('Ошибка загрузки изображения образа:', o.image_url)
+                            e.currentTarget.src = '/maneken.png'
+                          }}
                         />
-                      </div>
-                    )}
-                  </div>
-                  <CardContent className="p-3 sm:p-4 space-y-1">
-                    <h3 className="font-medium leading-tight text-base sm:text-lg" title={o.name}>{o.name}</h3>
-                    <p className="text-xs sm:text-sm text-muted-foreground">Стиль: {o.style}</p>
-                    {o.total_price && (
-                      <p className="font-semibold text-sm sm:text-base">{o.total_price.toLocaleString()} ₸</p>
-                    )}
-                  </CardContent>
-                </Link>
-              </Card>
-            </motion.div>
-          ))}
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-muted">
+                          <img
+                            src="/maneken.png"
+                            alt="Манекен"
+                            className="h-2/3 w-2/3 object-contain opacity-70"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <CardContent className="p-3 sm:p-4 space-y-1">
+                      <h3 className="font-medium leading-tight text-base sm:text-lg" title={o.name}>{o.name}</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Стиль: {o.style}</p>
+                      {o.total_price && (
+                        <p className="font-semibold text-sm sm:text-base">{o.total_price.toLocaleString()} ₸</p>
+                      )}
+                    </CardContent>
+                  </Link>
+                </Card>
+              </motion.div>
+            )
+          })}
         </motion.div>
       ) : (
         <motion.div
@@ -203,6 +222,38 @@ const OutfitsList = () => {
           <p className="text-muted-foreground">Попробуйте изменить запрос или создайте собственный лук!</p>
         </motion.div>
       )}
+
+      {/* Loading More Indicator */}
+      {loadingMore && (
+        <div className="mt-8 flex justify-center">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+            <span className="text-sm text-muted-foreground">Загрузка...</span>
+          </div>
+        </div>
+      )}
+
+      {/* End of Results */}
+      {!loading && !loadingMore && !hasMore && outfits.length > 0 && (
+        <div className="mt-8 text-center">
+          <p className="text-sm text-muted-foreground">Больше образов нет</p>
+        </div>
+      )}
+
+      {/* Load More Button */}
+      {!loading && hasMore && (
+        <div className="mt-8 flex justify-center">
+          <Button 
+            onClick={() => setPage(prev => prev + 1)}
+            disabled={loadingMore}
+            variant="outline"
+          >
+            {loadingMore ? 'Загрузка...' : `Загрузить ещё (${page} → ${page + 1})`}
+          </Button>
+        </div>
+      )}
+
+      {/* Empty State */}
     </div>
   )
 }

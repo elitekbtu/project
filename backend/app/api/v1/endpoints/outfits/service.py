@@ -5,6 +5,7 @@ from sqlalchemy import or_, and_, func, desc
 from datetime import datetime, timedelta
 import re
 from difflib import SequenceMatcher
+from sqlalchemy.orm import selectinload
 
 from app.db.models.outfit import Outfit, OutfitItem
 from app.db.models.item import Item
@@ -316,6 +317,11 @@ def list_outfits(
 ):
     query = db.query(Outfit)
 
+    # Eager load outfit_items и item для избежания N+1
+    query = query.options(
+        selectinload(Outfit.outfit_items).selectinload(OutfitItem.item)
+    )
+
     if user is not None and not is_admin(user):
         query = query.filter(Outfit.owner_id == str(user.id))
 
@@ -348,22 +354,26 @@ def list_outfits(
 
     return result
 
-def list_favorite_outfits(db: Session, user: User):
-    return [_calculate_outfit_price(o) for o in user.favorite_outfits.all()]
+def list_favorite_outfits(db: Session, user: User, skip: int = 0, limit: int = 20):
+    """Return paginated favorite outfits for the user."""
+    query = user.favorite_outfits.order_by(desc(Outfit.created_at))  # type: ignore
+    outfits = query.offset(skip).limit(limit).all()
+    return [_calculate_outfit_price(o) for o in outfits]
 
-def viewed_outfits(db: Session, user: User, limit: int = 50):
-    views = (
+
+def viewed_outfits(db: Session, user: User, skip: int = 0, limit: int = 20):
+    """Return paginated viewed outfits history for the user (most recent first)."""
+    views_query = (
         db.query(OutfitView)
         .filter(OutfitView.user_id == user.id)
-        .order_by(OutfitView.viewed_at.desc())
-        .limit(limit)
-        .all()
+        .order_by(desc(OutfitView.viewed_at))
     )
+    views = views_query.offset(skip).limit(limit).all()
     outfit_ids = [v.outfit_id for v in views]
     if not outfit_ids:
         return []
-    outfits = db.query(Outfit).filter(Outfit.id.in_(outfit_ids)).all()
-    return [_calculate_outfit_price(o) for o in outfits]
+    outfits_map = {o.id: o for o in db.query(Outfit).filter(Outfit.id.in_(outfit_ids)).all()}
+    return [_calculate_outfit_price(outfits_map[oid]) for oid in outfit_ids if oid in outfits_map]
 
 def clear_outfit_view_history(db: Session, user: User):
     db.query(OutfitView).filter(OutfitView.user_id == user.id).delete()

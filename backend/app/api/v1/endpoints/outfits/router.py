@@ -32,8 +32,7 @@ def create_outfit(request: Request, outfit_in: OutfitCreate, db: Session = Depen
 @limiter.limit(RATE_LIMITS["api"])
 def list_outfits(
     request: Request,
-    skip: int = 0,
-    limit: int = 100,
+    page: int = Query(1, ge=1),
     q: Optional[str] = Query(None),
     style: Optional[str] = Query(None),
     min_price: Optional[float] = Query(None),
@@ -42,19 +41,35 @@ def list_outfits(
     db: Session = Depends(get_db),
     user: Optional[User] = Depends(get_current_user_optional)
 ):
+    from app.core.pagination import get_pagination
+    skip, limit = get_pagination(page)
     return service.list_outfits(db, user, skip, limit, q, style, min_price, max_price, sort_by)
 
 
 @router.get("/favorites", response_model=List[OutfitOut])
 @limiter.limit(RATE_LIMITS["api"])
-def list_favorite_outfits(request: Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return service.list_favorite_outfits(db, user)
+def list_favorite_outfits(
+    request: Request,
+    page: int = Query(1, ge=1),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from app.core.pagination import get_pagination
+    skip, limit = get_pagination(page)
+    return service.list_favorite_outfits(db, user, skip, limit)
 
 
 @router.get("/history", response_model=List[OutfitOut])
 @limiter.limit(RATE_LIMITS["api"])
-def viewed_outfits(request: Request, limit: int = 50, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return service.viewed_outfits(db, user, limit)
+def viewed_outfits(
+    request: Request,
+    page: int = Query(1, ge=1),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from app.core.pagination import get_pagination
+    skip, limit = get_pagination(page)
+    return service.viewed_outfits(db, user, skip, limit)
 
 
 @router.delete("/history", status_code=status.HTTP_204_NO_CONTENT)

@@ -54,8 +54,7 @@ async def create_item(
 @limiter.limit(RATE_LIMITS["api"])
 def list_items(
     request: Request,
-    skip: int = 0,
-    limit: int = 100,
+    page: int = Query(1, ge=1),
     q: Optional[str] = None,
     category: Optional[str] = None,
     style: Optional[str] = None,
@@ -79,6 +78,8 @@ def list_items(
         "sort_by": sort_by,
         "clothing_type": clothing_type,
     }
+    from app.core.pagination import get_pagination
+    skip, limit = get_pagination(page)
     return service.list_items(db, filters, skip, limit, user.id if user else None, user)
 
 
@@ -103,14 +104,28 @@ def list_collections(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/favorites", response_model=List[ItemOut])
 @limiter.limit(RATE_LIMITS["api"])
-def list_favorite_items(request: Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return service.list_favorite_items(db, user)
+def list_favorite_items(
+    request: Request,
+    page: int = Query(1, ge=1),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from app.core.pagination import get_pagination
+    skip, limit = get_pagination(page)
+    return service.list_favorite_items(db, user, skip, limit)
 
 
 @router.get("/history", response_model=List[ItemOut])
 @limiter.limit(RATE_LIMITS["api"])
-def viewed_items(request: Request, limit: int = 50, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return service.viewed_items(db, user, limit)
+def viewed_items(
+    request: Request,
+    page: int = Query(1, ge=1),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from app.core.pagination import get_pagination
+    skip, limit = get_pagination(page)
+    return service.viewed_items(db, user, skip, limit)
 
 
 @router.delete("/history", status_code=status.HTTP_204_NO_CONTENT)

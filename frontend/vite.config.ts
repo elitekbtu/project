@@ -17,8 +17,13 @@ export default defineConfig({
         injectionPoint: undefined
       },
       devOptions: {
-        enabled: true,
+        enabled: false, // Completely disable in development
         type: 'module'
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        cleanupOutdatedCaches: true,
+        sourcemap: true
       }
     })
   ],

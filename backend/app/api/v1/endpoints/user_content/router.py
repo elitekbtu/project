@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, status, Request
+from fastapi import APIRouter, Depends, status, Request, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -30,10 +30,13 @@ async def toggle_favorite(
 async def list_favorites(
     request: Request,
     user_id: int,
+    page: int = Query(1, ge=1),
     db: Session = Depends(get_db),
     current: User = Depends(get_current_user),
 ):
-    return await service.list_favorites(db, user_id, current)
+    from app.core.pagination import get_pagination
+    skip, limit = get_pagination(page)
+    return await service.list_favorites(db, user_id, skip, limit, current)
 
 
 @router.get("/{user_id}/history", response_model=List[ItemOut])
@@ -41,8 +44,10 @@ async def list_favorites(
 async def user_history(
     request: Request,
     user_id: int,
-    limit: int = 50,
+    page: int = Query(1, ge=1),
     db: Session = Depends(get_db),
     current: User = Depends(get_current_user),
 ):
-    return await service.user_history(db, user_id, limit, current) 
+    from app.core.pagination import get_pagination
+    skip, limit = get_pagination(page)
+    return await service.user_history(db, user_id, skip, limit, current) 

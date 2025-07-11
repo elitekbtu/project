@@ -11,8 +11,7 @@ import {
 } from './schemas'
 
 export interface ListItemsParams {
-  skip?: number
-  limit?: number
+  page?: number
   q?: string
   category?: string
   style?: string
@@ -70,15 +69,15 @@ export const toggleFavoriteItem = async (id: number) => {
   await api.post(`/api/items/${id}/favorite`)
 }
 
-export const listFavoriteItems = async () => {
-  const resp = await api.get<ItemOut[]>('/api/items/favorites')
+export const listFavoriteItems = async (page = 1) => {
+  const resp = await api.get<ItemOut[]>('/api/items/favorites', { params: { page } })
   return resp.data
 }
 
 // ---------- View History ----------
 
-export const viewedItems = async (limit = 50) => {
-  const resp = await api.get<ItemOut[]>('/api/items/history', { params: { limit } })
+export const viewedItems = async (page = 1) => {
+  const resp = await api.get<ItemOut[]>('/api/items/history', { params: { page } })
   return resp.data
 }
 

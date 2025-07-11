@@ -9,9 +9,9 @@ class RateLimitConfig:
         self.default_limits = {
             "default": "100/minute",
             "auth": "10/minute", 
-            "api": "1000/hour",
+            "api": "5000/hour",  # Увеличено для разработки
             "upload": "10/minute",
-            "admin": "1000/minute",
+            "admin": "10000/minute",  # Увеличено для разработки
         }
         
         # DDoS protection настройки
