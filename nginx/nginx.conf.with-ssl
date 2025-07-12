@@ -55,7 +55,7 @@ http {
         ssl_certificate /etc/letsencrypt/live/trc.works/fullchain.pem;
         ssl_certificate_key /etc/letsencrypt/live/trc.works/privkey.pem;
         
-        # SSL Security Settings
+        # SSL Security Settingsnpm run build
         ssl_protocols TLSv1.2 TLSv1.3;
         ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384;
         ssl_prefer_server_ciphers off;
@@ -68,6 +68,31 @@ http {
         add_header X-XSS-Protection "1; mode=block";
         add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload";
         add_header Referrer-Policy "strict-origin-when-cross-origin";
+
+        # Backend API - должно быть перед frontend location
+        location /api/ {
+            proxy_pass http://backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            
+            # Disable request body buffering so large uploads stream directly to backend
+            proxy_request_buffering off;
+
+            # Increase timeout for API requests
+            proxy_read_timeout 300s;
+            proxy_connect_timeout 75s;
+        }
+
+        # Static files/uploads - должно быть перед frontend location
+        location /uploads/ {
+            proxy_pass http://backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
 
         # Frontend static files
         location / {
@@ -101,31 +126,6 @@ http {
             add_header Cache-Control "no-cache, no-store, must-revalidate";
             add_header Pragma "no-cache";
             add_header Expires "0";
-        }
-
-        # Backend API
-        location /api/ {
-            proxy_pass http://backend;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            
-            # Disable request body buffering so large uploads stream directly to backend
-            proxy_request_buffering off;
-
-            # Increase timeout for API requests
-            proxy_read_timeout 300s;
-            proxy_connect_timeout 75s;
-        }
-
-        # Static files/uploads
-        location /uploads/ {
-            proxy_pass http://backend;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
         }
 
         # Health check endpoint
