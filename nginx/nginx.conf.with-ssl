@@ -11,8 +11,7 @@ http {
 
     resolver 127.0.0.11 valid=30s;
 
-    # Global root directory
-    root /usr/share/nginx/html;
+    # Global root directory - убираем глобальный root
 
     # Gzip compression
     gzip on;
