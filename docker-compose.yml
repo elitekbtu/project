@@ -10,12 +10,15 @@ services:
       - backend
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - frontend_dist:/usr/share/nginx/html:ro
       - ./certbot/conf:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro
 
   frontend:
     build: ./frontend
     restart: unless-stopped
+    volumes:
+      - frontend_dist:/app/dist
 
   backend:
     build: ./backend
@@ -155,3 +158,4 @@ services:
 volumes:
   postgres_data:
   rabbitmq_data:
+  frontend_dist:
