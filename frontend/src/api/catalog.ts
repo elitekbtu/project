@@ -5,6 +5,7 @@ export interface ParseRequest {
   query: string
   limit: number
   domain: 'ru' | 'kz' | 'by'
+  page?: number // добавлено для постраничного парсинга
 }
 
 export interface ParseResponse {
@@ -117,11 +118,14 @@ export const startFullParsing = async (request: ParseRequest): Promise<ParseResp
 export const startSimpleParsing = async (
   query: string,
   limit: number = 10,
-  domain: 'ru' | 'kz' | 'by' = 'kz'
+  domain: 'ru' | 'kz' | 'by' = 'kz',
+  page?: number
 ): Promise<ParseResponse> => {
-  const response = await api.post<ParseResponse>(
-    `/api/catalog/parse-simple?query=${encodeURIComponent(query)}&limit=${limit}&domain=${domain}`
-  )
+  let url = `/api/catalog/parse-simple?query=${encodeURIComponent(query)}&limit=${limit}&domain=${domain}`
+  if (page !== undefined) {
+    url += `&page=${page}`
+  }
+  const response = await api.post<ParseResponse>(url)
   return response.data
 }
 

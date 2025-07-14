@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { Users, Shirt, Layers, ChevronRight, Download } from 'lucide-react'
+import { Users, Shirt, Layers, ChevronRight, BarChart3, Zap } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { cn } from '../../lib/utils'
 
@@ -21,23 +21,34 @@ const AdminDashboard = () => {
       label: 'Товары',
       icon: <Shirt className="h-4 w-4" />
     },
+    // Новый пункт только для администратора
+    ...(isAdmin ? [{
+      path: '/admin/lamoda-parser',
+      label: 'Парсер',
+      icon: <Zap className="h-4 w-4" />
+    }] : []),
+    {
+      path: '/admin/analytics',
+      label: 'Аналитика',
+      icon: <BarChart3 className="h-4 w-4" />
+    },
+    {
+      path: '/admin/system',
+      label: 'Система',
+      icon: <BarChart3 className="h-4 w-4" />
+    },
     {
       path: '/admin/outfits',
       label: 'Образы',
       icon: <Layers className="h-4 w-4" />
-    },
-    {
-      path: '/admin/parser',
-      label: 'Парсер Lamoda',
-      icon: <Download className="h-4 w-4" />
     }
   ] as const
 
   const navItems = baseItems.filter((item) => {
     if (isAdmin) return true
     if (isModerator) {
-      // модератору показываем только раздел товаров
-      return item.path.startsWith('/admin/items')
+      // модератору показываем раздел товаров и аналитику
+      return item.path.startsWith('/admin/items') || item.path.startsWith('/admin/analytics')
     }
     return false
   })

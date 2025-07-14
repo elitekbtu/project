@@ -33,6 +33,7 @@ export const clearStoredTokens = () => {
 // Create axios instance
 const api = axios.create({
   baseURL,
+  withCredentials: true,
 })
 
 // Request interceptor: attach access token

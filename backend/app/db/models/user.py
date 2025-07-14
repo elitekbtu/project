@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Boolean, Date, Float
+from sqlalchemy import Column, Integer, String, Boolean, Date, Float, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 from app.core.database import Base
 from app.db.models.associations import user_favorite_items, UserView, user_favorite_colors, user_favorite_brands
@@ -22,6 +23,7 @@ class User(Base):
     date_of_birth = Column(Date, nullable=True)
     height = Column(Float, nullable=True)
     weight = Column(Float, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     chest = Column(Float, nullable=True)
     waist = Column(Float, nullable=True)

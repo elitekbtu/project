@@ -28,7 +28,8 @@ import AdminDashboard from './components/Admin/AdminDashboard'
 import UsersAdmin from './components/Admin/UsersAdmin'
 import ItemsAdmin from './components/Admin/ItemsAdmin'
 import OutfitsAdmin from './components/Admin/OutfitsAdmin'
-import LamodaParser from './components/Admin/LamodaParser'
+import ModeratorAnalytics from './components/Admin/ModeratorAnalytics'
+import SystemAnalytics from './components/Admin/SystemAnalytics'
 import UserForm from './components/Admin/UserForm'
 import ItemForm from './components/Admin/ItemForm'
 import OutfitForm from './components/Admin/OutfitForm'
@@ -37,6 +38,7 @@ import History from './components/Main/History'
 import OutfitBuilder from './components/Main/Outfits/OutfitBuilder'
 import CreateOutfit from './components/Main/Outfits/CreateOutfit'
 import EditOutfit from './components/Main/Outfits/EditOutfit'
+import LamodaParser from './components/Admin/LamodaParser'
 
 function App() {
   // Инициализация PWA
@@ -79,10 +81,13 @@ function App() {
                 <Route path="/admin/items" element={<ItemsAdmin />} />
                 <Route path="/admin/items/new" element={<ItemForm />} />
                 <Route path="/admin/items/:id/edit" element={<ItemForm />} />
+                {/* Новый роут для Lamoda парсера только для администратора */}
+                <Route path="/admin/lamoda-parser" element={<RequireAdmin><LamodaParser /></RequireAdmin>} />
                 <Route path="/admin/outfits" element={<RequireAdmin><OutfitsAdmin /></RequireAdmin>} />
                 <Route path="/admin/outfits/new" element={<RequireAdmin><OutfitForm /></RequireAdmin>} />
                 <Route path="/admin/outfits/:id/edit" element={<RequireAdmin><OutfitForm /></RequireAdmin>} />
-                <Route path="/admin/parser" element={<RequireAdmin><LamodaParser /></RequireAdmin>} />
+                <Route path="/admin/analytics" element={<ModeratorAnalytics />} />
+                <Route path="/admin/system" element={<RequireAdmin><SystemAnalytics /></RequireAdmin>} />
               </Route>
             </Route>
             {/* Fallback */}

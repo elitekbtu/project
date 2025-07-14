@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -25,6 +25,7 @@ class Outfit(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     tryon_image_url = Column(String(500), nullable=True)  # URL изображения виртуальной примерки
+    is_public = Column(Boolean, default=False)
     
     owner = relationship("User", back_populates="outfits")
     outfit_items = relationship("OutfitItem", cascade="all, delete-orphan")

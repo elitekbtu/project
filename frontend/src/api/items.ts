@@ -144,3 +144,67 @@ export const listItemImages = async (itemId: number) => {
 export const deleteItemImage = async (itemId: number, imageId: number) => {
   await api.delete(`/api/items/${itemId}/images/${imageId}`)
 } 
+
+// ---------- Moderator Analytics ----------
+
+export interface ModeratorAnalytics {
+  moderator_info: {
+    user_id: number
+    user_name: string
+    total_items: number
+  }
+  overview: {
+    total_items: number
+    items_this_week: number
+    items_this_month: number
+    average_items_per_week: number
+    average_items_per_month: number
+  }
+  categories: Array<{
+    category: string
+    count: number
+  }>
+  brands: Array<{
+    brand: string
+    count: number
+  }>
+  price_analysis: {
+    min_price: number
+    max_price: number
+    average_price: number
+    items_with_price: number
+    price_range: {
+      low: number
+      medium: number
+      high: number
+    }
+  }
+  popular_items: {
+    by_likes: Array<{
+      item_id: number
+      name: string
+      likes: number
+    }>
+    by_views: Array<{
+      item_id: number
+      name: string
+      views: number
+    }>
+    by_comments: Array<{
+      item_id: number
+      name: string
+      comments: number
+    }>
+  }
+  recent_activity: {
+    last_week_items: number
+    last_month_items: number
+    growth_rate: number
+  }
+  generated_at: string
+}
+
+export const getModeratorAnalytics = async (): Promise<ModeratorAnalytics> => {
+  const resp = await api.get<ModeratorAnalytics>('/api/items/moderator/analytics')
+  return resp.data
+} 

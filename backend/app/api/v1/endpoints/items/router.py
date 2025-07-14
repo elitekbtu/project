@@ -235,3 +235,14 @@ def list_item_images(request: Request, item_id: int, db: Session = Depends(get_d
 @limiter.limit(RATE_LIMITS["api"])
 def delete_item_image(request: Request, item_id: int, image_id: int, db: Session = Depends(get_db)):
     return service.delete_item_image(db, item_id, image_id) 
+
+
+@router.get("/moderator/analytics")
+@limiter.limit(RATE_LIMITS["api"])
+def get_moderator_analytics(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_or_moderator),
+):
+    """Получить аналитику товаров модератора"""
+    return service.get_moderator_analytics(db, current_user) 

@@ -20,7 +20,6 @@ engine = create_engine(
     pool_timeout=settings.DB_POOL_TIMEOUT,
     pool_recycle=settings.DB_POOL_RECYCLE,
     pool_reset_on_return='commit',
-    echo=False  # Отключаем SQL логирование для производительности
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, future=True)
@@ -45,7 +44,6 @@ def get_pool_stats():
         "checked_in": pool.checkedin(),
         "checked_out": pool.checkedout(),
         "overflow": pool.overflow(),
-        "invalid": pool.invalid()
     }
 
 

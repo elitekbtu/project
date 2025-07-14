@@ -463,3 +463,152 @@ def list_collections(db: Session):
         .all()
     )
     return [n[0] for n in names] 
+
+
+def get_moderator_analytics(db: Session, user: User):
+    """Получить аналитику товаров модератора"""
+    from datetime import datetime, timedelta
+    from sqlalchemy import func, and_
+    
+    # Базовый запрос для товаров модератора
+    base_query = db.query(Item).filter(Item.owner_id == user.id)
+    
+    # Общая статистика
+    total_items = base_query.count()
+    
+    # Статистика по категориям
+    category_stats = (
+        db.query(Item.category, func.count(Item.id))
+        .filter(Item.owner_id == user.id)
+        .group_by(Item.category)
+        .all()
+    )
+    
+    # Статистика по брендам
+    brand_stats = (
+        db.query(Item.brand, func.count(Item.id))
+        .filter(Item.owner_id == user.id)
+        .group_by(Item.brand)
+        .all()
+    )
+    
+    # Ценовая статистика
+    price_stats = (
+        db.query(
+            func.min(Item.price),
+            func.max(Item.price),
+            func.avg(Item.price),
+            func.count(Item.id)
+        )
+        .filter(and_(Item.owner_id == user.id, Item.price.isnot(None)))
+        .first()
+    )
+    
+    # Статистика по времени создания
+    now = datetime.now()
+    week_ago = now - timedelta(days=7)
+    month_ago = now - timedelta(days=30)
+    
+    items_this_week = base_query.filter(Item.created_at >= week_ago).count()
+    items_this_month = base_query.filter(Item.created_at >= month_ago).count()
+    
+    # Статистика по популярности (лайки)
+    favorite_stats = (
+        db.query(
+            Item.id,
+            Item.name,
+            func.count(user_favorite_items.c.user_id).label('likes_count')
+        )
+        .outerjoin(user_favorite_items, Item.id == user_favorite_items.c.item_id)
+        .filter(Item.owner_id == user.id)
+        .group_by(Item.id, Item.name)
+        .order_by(func.count(user_favorite_items.c.user_id).desc())
+        .limit(10)
+        .all()
+    )
+    
+    # Статистика по просмотрам
+    view_stats = (
+        db.query(
+            Item.id,
+            Item.name,
+            func.count(UserView.id).label('views_count')
+        )
+        .outerjoin(UserView, Item.id == UserView.item_id)
+        .filter(Item.owner_id == user.id)
+        .group_by(Item.id, Item.name)
+        .order_by(func.count(UserView.id).desc())
+        .limit(10)
+        .all()
+    )
+    
+    # Статистика по комментариям
+    comment_stats = (
+        db.query(
+            Item.id,
+            Item.name,
+            func.count(Comment.id).label('comments_count')
+        )
+        .outerjoin(Comment, Item.id == Comment.item_id)
+        .filter(Item.owner_id == user.id)
+        .group_by(Item.id, Item.name)
+        .order_by(func.count(Comment.id).desc())
+        .limit(10)
+        .all()
+    )
+    
+    return {
+        "moderator_info": {
+            "user_id": user.id,
+            "user_name": f"{user.first_name or ''} {user.last_name or ''}".strip() or user.email,
+            "total_items": total_items
+        },
+        "overview": {
+            "total_items": total_items,
+            "items_this_week": items_this_week,
+            "items_this_month": items_this_month,
+            "average_items_per_week": round(items_this_week / 1, 2),
+            "average_items_per_month": round(items_this_month / 1, 2)
+        },
+        "categories": [
+            {"category": category, "count": count}
+            for category, count in category_stats
+            if category
+        ],
+        "brands": [
+            {"brand": brand, "count": count}
+            for brand, count in brand_stats
+            if brand
+        ],
+        "price_analysis": {
+            "min_price": float(price_stats[0]) if price_stats and price_stats[0] else 0,
+            "max_price": float(price_stats[1]) if price_stats and price_stats[1] else 0,
+            "average_price": float(price_stats[2]) if price_stats and price_stats[2] else 0,
+            "items_with_price": price_stats[3] if price_stats else 0,
+            "price_range": {
+                "low": float(price_stats[0]) if price_stats and price_stats[0] else 0,
+                "medium": float(price_stats[2]) if price_stats and price_stats[2] else 0,
+                "high": float(price_stats[1]) if price_stats and price_stats[1] else 0
+            }
+        },
+        "popular_items": {
+            "by_likes": [
+                {"item_id": item_id, "name": name, "likes": likes_count}
+                for item_id, name, likes_count in favorite_stats
+            ],
+            "by_views": [
+                {"item_id": item_id, "name": name, "views": views_count}
+                for item_id, name, views_count in view_stats
+            ],
+            "by_comments": [
+                {"item_id": item_id, "name": name, "comments": comments_count}
+                for item_id, name, comments_count in comment_stats
+            ]
+        },
+        "recent_activity": {
+            "last_week_items": items_this_week,
+            "last_month_items": items_this_month,
+            "growth_rate": round((items_this_week / max(items_this_month - items_this_week, 1)) * 100, 2) if items_this_month > items_this_week else 0
+        },
+        "generated_at": datetime.now().isoformat()
+    } 
