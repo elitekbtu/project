@@ -17,7 +17,7 @@ async def get_profile(request: Request, user: User = Depends(get_current_user)):
     return service.get_profile(user)
 
 
-@router.put("/", response_model=ProfileOut)
+@router.patch("/", response_model=ProfileOut)
 @limiter.limit(RATE_LIMITS["api"])
 async def update_profile(
     request: Request,
@@ -59,7 +59,7 @@ async def remove_avatar(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    return service.remove_avatar(db, user)
+    return service.delete_avatar(db, user)
 
 
 @router.post("/upload-photo", response_model=dict)

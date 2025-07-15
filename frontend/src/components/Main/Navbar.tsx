@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { ShoppingBag, User, LogOut, Settings, Heart, ShoppingCart, Clock, Menu, Home, LayoutGrid, Sparkles, Shield } from 'lucide-react'
+import { ShoppingBag, User, LogOut, Settings, Heart, ShoppingCart, Clock, Menu, Home, LayoutGrid, Sparkles, Shield, Store } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useCart } from '../../context/CartContext'
 import { useFavorites } from '../../context/FavoritesContext'
@@ -90,6 +90,22 @@ const MainNavbar = () => {
               />
             )}
           </Link>
+          <Link 
+            to="/shops" 
+            className={`text-sm font-medium transition-all duration-200 hover:text-foreground relative group ${
+              isActive('/shops') ? 'text-foreground' : 'text-muted-foreground'
+            }`}
+          >
+            Магазины
+            {isActive('/shops') && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute -bottom-2 left-0 right-0 h-0.5 bg-primary rounded-full"
+                initial={false}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              />
+            )}
+          </Link>
           {(isAdmin || isModerator) && (
             <Link
               to={isAdmin ? "/admin/users" : "/admin/items"}
@@ -140,6 +156,12 @@ const MainNavbar = () => {
                 <Link to="/outfits" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
                   <Sparkles className="h-4 w-4" /> 
                   <span className="font-medium">Образы</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/shops" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                  <Store className="h-4 w-4" /> 
+                  <span className="font-medium">Магазины</span>
                 </Link>
               </DropdownMenuItem>
               {(isAdmin || isModerator) && (

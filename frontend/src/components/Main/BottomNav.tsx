@@ -1,10 +1,11 @@
-import { Home, ShoppingBag, LayoutGrid, User } from 'lucide-react'
+import { Home, ShoppingBag, LayoutGrid, User, Store } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 
 const tabs = [
   { to: '/home', icon: Home, label: 'Главная' },
   { to: '/items', icon: ShoppingBag, label: 'Каталог' },
   { to: '/outfits', icon: LayoutGrid, label: 'Образы' },
+  { to: '/shops', icon: Store, label: 'Магазины' },
   { to: '/profile', icon: User, label: 'Профиль' },
 ]
 
@@ -13,7 +14,7 @@ const BottomNav = () => {
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-50 bg-white border-t shadow-sm md:hidden min-h-[60px]">
-      <ul className="grid grid-cols-4">
+      <ul className="grid grid-cols-5">
         {tabs.map((t) => {
           const active = location.pathname.startsWith(t.to)
           const Icon = t.icon

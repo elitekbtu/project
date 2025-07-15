@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 import { Card, CardContent } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
-import { TrendingUp, Heart, ShoppingBag, Sparkles } from 'lucide-react'
+import { TrendingUp, Heart, ShoppingBag, Sparkles, Store } from 'lucide-react'
 import ItemImage from '../common/ItemImage'
 import { CATEGORY_LABELS } from '../../constants'
 
@@ -79,13 +79,19 @@ const Home = () => {
         transition={{ duration: 0.6, delay: 0.2 }}
         className="mb-12"
       >
-        <div className="grid gap-4 grid-cols-3 sm:grid-cols-3 md:grid-cols-3">
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-4 md:grid-cols-4">
           {[
             {
               to: '/items',
               icon: <ShoppingBag className="h-6 w-6 text-primary" />,
               label: 'Каталог',
               sub: 'Все товары',
+            },
+            {
+              to: '/shops',
+              icon: <Store className="h-6 w-6 text-primary" />,
+              label: 'Магазины',
+              sub: 'Модераторы',
             },
             {
               to: '/outfits/new',

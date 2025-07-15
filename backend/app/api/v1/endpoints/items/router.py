@@ -1,5 +1,6 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, status, Query, UploadFile, File, Form, Request
+from fastapi import APIRouter, Depends, status, Query, UploadFile, File, Form, Request, Response
+import json
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -64,6 +65,7 @@ def list_items(
     size: Optional[str] = None,
     sort_by: Optional[str] = None,
     clothing_type: Optional[str] = None,
+    moderator_id: Optional[int] = None,
     db: Session = Depends(get_db),
     user: Optional[User] = Depends(get_current_user_optional),
 ):
@@ -77,10 +79,41 @@ def list_items(
         "size": size,
         "sort_by": sort_by,
         "clothing_type": clothing_type,
+        "moderator_id": moderator_id,
     }
     from app.core.pagination import get_pagination
     skip, limit = get_pagination(page)
-    return service.list_items(db, filters, skip, limit, user.id if user else None, user)
+    items = service.list_items(db, filters, skip, limit, user.id if user else None, user)
+    
+    # Add total count header for pagination
+    total_count = service.get_items_count(db, filters, user)
+    
+    # Convert items to dict format
+    items_dict = []
+    for item in items:
+        item_dict = {
+            "id": item.id,
+            "name": item.name,
+            "brand": item.brand,
+            "color": item.color,
+            "image_url": item.image_url,
+            "description": item.description,
+            "price": item.price,
+            "category": item.category,
+            "article": item.article,
+            "size": item.size,
+            "style": item.style,
+            "collection": item.collection,
+            "created_at": item.created_at.isoformat() if item.created_at else None,
+            "updated_at": item.updated_at.isoformat() if item.updated_at else None,
+            "images": [{"id": img.id, "url": img.image_url, "position": img.position} for img in item.images] if hasattr(item, 'images') else [],
+            "is_favorite": getattr(item, 'is_favorite', False)
+        }
+        items_dict.append(item_dict)
+    
+    response = Response(content=json.dumps(items_dict), media_type="application/json")
+    response.headers["X-Total-Count"] = str(total_count)
+    return response
 
 
 @router.get("/trending", response_model=List[ItemOut])

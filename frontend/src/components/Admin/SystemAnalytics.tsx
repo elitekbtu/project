@@ -6,16 +6,12 @@ import {
   Layers, 
   Eye, 
   Heart, 
-  MessageSquare,
-  TrendingUp,
   Activity,
   BarChart3,
   Shield,
   Zap,
-  Clock,
   RefreshCw,
   Loader2,
-  AlertTriangle,
   CheckCircle,
   XCircle
 } from 'lucide-react'
@@ -23,11 +19,11 @@ import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { useToast } from '../ui/use-toast'
-import { getSystemAnalytics, getSystemHealth, getSystemPerformance, type SystemAnalytics, type SystemHealth, type SystemPerformance } from '../../api/system'
+import { getSystemAnalytics, getSystemHealth, getSystemPerformance, type SystemAnalytics as SystemAnalyticsType, type SystemHealth, type SystemPerformance } from '../../api/system'
 import { cn } from '../../lib/utils'
 
 const SystemAnalytics = () => {
-  const [analytics, setAnalytics] = useState<SystemAnalytics | null>(null)
+  const [analytics, setAnalytics] = useState<SystemAnalyticsType | null>(null)
   const [health, setHealth] = useState<SystemHealth | null>(null)
   const [performance, setPerformance] = useState<SystemPerformance | null>(null)
   const [loading, setLoading] = useState(true)

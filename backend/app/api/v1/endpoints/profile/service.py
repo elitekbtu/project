@@ -23,8 +23,7 @@ def get_profile(user: User):
 
 def update_profile(db: Session, user: User, profile_in: ProfileUpdate):
     update_data = profile_in.dict(exclude_unset=True)
-    if not update_data:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No data provided")
+    # Разрешаем пустые данные для частичного обновления
 
     # Helper to fetch/create preference entities
     def _get_or_create(model, name: str):
@@ -103,12 +102,20 @@ def _save_avatar_file(upload: UploadFile) -> str:
 def _remove_upload_file(url: str):
     if not url or not url.startswith("/uploads/"):
         return
-    fs_path = url.lstrip("/").replace("/", os.sep)
-    if os.path.exists(fs_path):
-        try:
+    
+    try:
+        fs_path = url.lstrip("/").replace("/", os.sep)
+        if os.path.exists(fs_path):
             os.remove(fs_path)
-        except OSError:
-            pass
+            print(f"Successfully removed file: {fs_path}")
+        else:
+            print(f"File not found: {fs_path}")
+    except OSError as e:
+        print(f"Error removing file {url}: {e}")
+        # Не вызываем исключение, так как это не критично
+    except Exception as e:
+        print(f"Unexpected error removing file {url}: {e}")
+        # Не вызываем исключение, так как это не критично
 
 
 def upload_avatar(db: Session, user: User, file: UploadFile):
@@ -126,11 +133,23 @@ def upload_avatar(db: Session, user: User, file: UploadFile):
 
 
 def delete_avatar(db: Session, user: User):
-    _remove_upload_file(user.avatar or "")
-    user.avatar = None
-    db.add(user)
-    db.commit()
-    return None
+    try:
+        # Удаляем файл аватара
+        _remove_upload_file(user.avatar or "")
+        
+        # Очищаем поле аватара в базе данных
+        user.avatar = None
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
+        return user
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete avatar: {str(e)}"
+        )
 
 
 def _save_user_photo_file(upload: UploadFile) -> str:

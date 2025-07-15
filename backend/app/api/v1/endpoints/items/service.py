@@ -12,6 +12,7 @@ from app.db.models.associations import user_favorite_items, UserView
 from app.db.models.comment import Comment
 from app.db.models.variant import ItemVariant
 from app.db.models.item_image import ItemImage
+from app.core.security import is_admin
 from .schemas import ItemUpdate, VariantCreate, VariantUpdate, CommentCreate
 
 
@@ -166,6 +167,8 @@ def list_items(db: Session, filters: dict, skip: int = 0, limit: int = 100, user
         query = query.filter(Item.size.ilike(f"%{size}%"))
     if clothing_type := filters.get("clothing_type"):
         query = query.filter(Item.clothing_type.ilike(f"%{clothing_type}%"))
+    if moderator_id := filters.get("moderator_id"):
+        query = query.filter(Item.owner_id == moderator_id)
 
     # Apply sorting
     if sort_by := filters.get("sort_by"):
@@ -190,6 +193,43 @@ def list_items(db: Session, filters: dict, skip: int = 0, limit: int = 100, user
     else:
         # If user is a guest, result is just the Item object
         return paginated_results
+
+
+def get_items_count(db: Session, filters: dict, current_user: Optional[User] = None) -> int:
+    """Get total count of items matching filters"""
+    query = db.query(Item)
+
+    # If the requester is a moderator (not admin), restrict to their own items
+    if current_user is not None and getattr(current_user, "is_moderator", False) and not is_admin(current_user):
+        query = query.filter(Item.owner_id == current_user.id)
+
+    # Apply filters from the dictionary
+    if q := filters.get("q"):
+        query = query.filter(
+            or_(
+                Item.name.ilike(f"%{q}%"),
+                Item.description.ilike(f"%{q}%"),
+                Item.brand.ilike(f"%{q}%"),
+            )
+        )
+    if category := filters.get("category"):
+        query = query.filter(Item.category.ilike(f"%{category}%"))
+    if style := filters.get("style"):
+        query = query.filter(Item.style.ilike(f"%{style}%"))
+    if collection := filters.get("collection"):
+        query = query.filter(Item.collection.ilike(f"%{collection}%"))
+    if min_price := filters.get("min_price"):
+        query = query.filter(Item.price >= min_price)
+    if max_price := filters.get("max_price"):
+        query = query.filter(Item.price <= max_price)
+    if size := filters.get("size"):
+        query = query.filter(Item.size.ilike(f"%{size}%"))
+    if clothing_type := filters.get("clothing_type"):
+        query = query.filter(Item.clothing_type.ilike(f"%{clothing_type}%"))
+    if moderator_id := filters.get("moderator_id"):
+        query = query.filter(Item.owner_id == moderator_id)
+
+    return query.count()
 
 
 def get_item(db: Session, item_id: int, current_user: Optional[User] = None):

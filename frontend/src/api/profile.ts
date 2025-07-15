@@ -27,5 +27,6 @@ export const uploadAvatar = async (file: File) => {
 }
 
 export const deleteAvatar = async () => {
-  await api.delete('/api/profile/avatar')
+  const resp = await api.delete<ProfileOut>('/api/profile/avatar')
+  return resp.data
 } 

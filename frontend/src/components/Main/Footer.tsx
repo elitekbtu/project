@@ -57,6 +57,11 @@ const MainFooter = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/shops" className="transition-colors hover:text-foreground">
+                  Магазины
+                </Link>
+              </li>
+              <li>
                 <Link to="/profile" className="transition-colors hover:text-foreground">
                   Профиль
                 </Link>

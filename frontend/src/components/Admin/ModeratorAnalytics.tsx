@@ -1,13 +1,9 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
-  BarChart3, 
   TrendingUp, 
   Package, 
   DollarSign, 
-  Users, 
-  Eye, 
-  MessageSquare,
   Heart,
   Calendar,
   Target,
@@ -18,11 +14,11 @@ import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { useToast } from '../ui/use-toast'
-import { getModeratorAnalytics, type ModeratorAnalytics } from '../../api/items'
+import { getModeratorAnalytics, type ModeratorAnalytics as ModeratorAnalyticsType } from '../../api/items'
 import { cn } from '../../lib/utils'
 
 const ModeratorAnalytics = () => {
-  const [analytics, setAnalytics] = useState<ModeratorAnalytics | null>(null)
+  const [analytics, setAnalytics] = useState<ModeratorAnalyticsType | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const { toast } = useToast()

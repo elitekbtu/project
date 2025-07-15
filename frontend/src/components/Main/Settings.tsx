@@ -38,6 +38,7 @@ const Settings = () => {
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -77,9 +78,99 @@ const Settings = () => {
     fetchProfile()
   }, [toast])
 
+  const validateField = (name: string, value: any): string => {
+    switch (name) {
+      case 'first_name':
+      case 'last_name':
+        if (value && value.trim()) {
+          const trimmed = value.trim()
+          if (trimmed.length > 50) {
+            return `Не более 50 символов`
+          }
+          if (!/^[a-zA-Zа-яА-Я\s-]+$/.test(trimmed)) {
+            return `Только буквы, пробелы и дефисы`
+          }
+        }
+        break
+      
+      case 'phone_number':
+        if (value && value.trim() && !/^\+?[0-9]{7,15}$/.test(value)) {
+          return `Формат: +77071234567`
+        }
+        break
+      
+      case 'height':
+        if (value !== undefined && value !== '' && value !== null) {
+          const num = Number(value)
+          if (isNaN(num) || num <= 0) return 'Должно быть положительным числом'
+          if (num > 300) return 'Не более 300 см'
+        }
+        break
+      
+      case 'weight':
+        if (value !== undefined && value !== '' && value !== null) {
+          const num = Number(value)
+          if (isNaN(num) || num <= 0) return 'Должно быть положительным числом'
+          if (num > 500) return 'Не более 500 кг'
+        }
+        break
+      
+      case 'chest':
+      case 'waist':
+      case 'hips':
+        if (value !== undefined && value !== '' && value !== null) {
+          const num = Number(value)
+          if (isNaN(num) || num <= 0) return 'Должно быть положительным числом'
+          if (num > 200) return 'Не более 200 см'
+        }
+        break
+      
+      case 'date_of_birth':
+        if (value && value.trim()) {
+          const selected = new Date(value)
+          if (isNaN(selected.getTime())) {
+            return 'Некорректная дата'
+          }
+          
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          
+          if (selected > today) {
+            return 'Не может быть в будущем'
+          }
+          
+          const age = (today.getTime() - selected.getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+          if (age < 13) {
+            return 'Минимум 13 лет'
+          }
+          if (age > 120) {
+            return 'Некорректная дата'
+          }
+        }
+        break
+      
+      case 'avatar':
+        if (value && value.trim()) {
+          const avatar = value.trim()
+          if (!(avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/'))) {
+            return 'Ссылка должна быть абсолютной (http://, https://) или начинаться с /'
+          }
+        }
+        break
+    }
+    return ''
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setForm((prev: ProfileUpdate) => ({ ...prev, [name as keyof ProfileUpdate]: value }))
+    
+    // Валидация в реальном времени
+    const error = validateField(name, value)
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
+    }))
   }
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,74 +178,45 @@ const Settings = () => {
     const num = value === '' ? undefined : Number(value)
     if (num !== undefined && num < 0) return // игнорируем отрицательные значения
     setForm((prev: ProfileUpdate) => ({ ...prev, [name as keyof ProfileUpdate]: num }))
+    
+    // Валидация в реальном времени
+    const error = validateField(name, value)
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
+    }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Client-side validation
-    // 1. Телефон (опционально) — формат +77071234567, 7-15 цифр
-    if (form.phone_number) {
-      const phoneRegex = /^\+?[0-9]{7,15}$/
-      if (!phoneRegex.test(form.phone_number)) {
-        toast({ variant: 'destructive', title: 'Ошибка', description: 'Некорректный телефонный номер' })
-        return
-      }
-    }
-
-    // 2. Дата рождения — не в будущем
-    if (form.date_of_birth) {
-      const selected = new Date(form.date_of_birth)
-      const today = new Date()
-      // Обрезаем время у today
-      today.setHours(0,0,0,0)
-      if (selected > today) {
-        toast({ variant: 'destructive', title: 'Ошибка', description: 'Дата рождения не может быть в будущем' })
-        return
-      }
-    }
-
-    // 3. Положительные числовые значения
-    const numericFields: (keyof ProfileUpdate)[] = ['height', 'weight', 'chest', 'waist', 'hips']
-    for (const field of numericFields) {
-      const value = form[field] as number | undefined
-      if (value !== undefined && value <= 0) {
-        toast({ variant: 'destructive', title: 'Ошибка', description: 'Числовые параметры должны быть положительными' })
-        return
-      }
-    }
-
-    // 4. URL аватара (опционально)
-    // Разрешаем как абсолютные (http/https), так и относительные (начинающиеся с "/") пути,
-    // поскольку бэкенд возвращает относительный URL "/uploads/..." после загрузки файла
-    if (form.avatar && !/^https?:\/\//.test(form.avatar) && !form.avatar.startsWith('/')) {
+    // Проверяем ошибки валидации в реальном времени
+    const hasFieldErrors = Object.values(errors).some(error => error !== '')
+    if (hasFieldErrors) {
       toast({
         variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Ссылка на аватар должна быть абсолютной (http://, https://) или начинаться с /',
+        title: 'Ошибки валидации',
+        description: 'Исправьте ошибки в полях формы'
       })
       return
     }
 
-    // Prepare payload без пустых строк/значений
+    // Подготавливаем payload для отправки
     const payload: ProfileUpdate = { ...form }
-    Object.keys(payload).forEach((key) => {
-      const k = key as keyof ProfileUpdate
-      const val = payload[k] as unknown
-      if (val === '' || val === undefined || val === null) {
-        delete (payload as any)[k]
-      }
-    })
-
-    // Если изменений нет, просто показываем анимацию сохранения
-    if (Object.keys(payload).length === 0) {
-      setSubmitting(true)
-      // Небольшая задержка, чтобы спиннер успел отобразиться
-      setTimeout(() => {
-        toast({ title: 'Изменений не обнаружено' })
-        setSubmitting(false)
-      }, 600)
-      return
+    
+    // Обрабатываем строковые поля - отправляем пустые строки как есть
+    // Преобразуем favorite_colors и favorite_brands в массив строк
+    if (typeof payload.favorite_colors === 'string') {
+      payload.favorite_colors = payload.favorite_colors
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s !== '') // Оставляем пустые элементы для очистки
+    }
+    if (typeof payload.favorite_brands === 'string') {
+      payload.favorite_brands = payload.favorite_brands
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s !== '') // Оставляем пустые элементы для очистки
     }
 
     setSubmitting(true)
@@ -164,7 +226,11 @@ const Settings = () => {
       toast({ title: 'Профиль обновлен' })
       navigate('/profile')
     } catch (error: any) {
-      const msg = error?.response?.data?.detail || 'Не удалось обновить профиль'
+      let msg = error?.response?.data?.detail || 'Не удалось обновить профиль'
+      // Если detail — массив (422), собрать сообщения
+      if (Array.isArray(error?.response?.data?.detail)) {
+        msg = error.response.data.detail.map((d: any) => d.msg).join('. ')
+      }
       toast({
         variant: 'destructive',
         title: 'Ошибка',
@@ -214,17 +280,17 @@ const Settings = () => {
     if (!confirm('Удалить аватар?')) return
     setAvatarUploading(true)
     try {
-      await deleteAvatar()
+      const updated = await deleteAvatar()
       setForm((prev) => ({ ...prev, avatar: '' }))
-      // Получаем актуальный профиль и обновляем контекст
-      try {
-        const fresh = await getProfile()
-        updateUser(fresh)
-      } catch {
-        // ignore
+      updateUser(updated)
+      toast({ title: 'Аватар удален' })
+    } catch (err: any) {
+      console.error('Error deleting avatar:', err)
+      let msg = 'Не удалось удалить аватар'
+      if (err?.response?.data?.detail) {
+        msg = err.response.data.detail
       }
-    } catch (err) {
-      toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось удалить аватар' })
+      toast({ variant: 'destructive', title: 'Ошибка', description: msg })
     } finally {
       setAvatarUploading(false)
     }
@@ -261,8 +327,13 @@ const Settings = () => {
                 value={form.first_name || ''}
                 onChange={handleChange}
                 placeholder="Имя"
-                className="focus:border-primary focus:ring-1 focus:ring-primary"
+                className={`focus:ring-1 focus:ring-primary ${
+                  errors.first_name ? 'border-red-500 focus:border-red-500' : 'focus:border-primary'
+                }`}
               />
+              {errors.first_name && (
+                <p className="text-sm text-red-500">{errors.first_name}</p>
+              )}
             </div>
             <div className="space-y-3">
               <Label htmlFor="last_name" className="text-sm font-medium text-muted-foreground">
@@ -274,8 +345,13 @@ const Settings = () => {
                 value={form.last_name || ''}
                 onChange={handleChange}
                 placeholder="Фамилия"
-                className="focus:border-primary focus:ring-1 focus:ring-primary"
+                className={`focus:ring-1 focus:ring-primary ${
+                  errors.last_name ? 'border-red-500 focus:border-red-500' : 'focus:border-primary'
+                }`}
               />
+              {errors.last_name && (
+                <p className="text-sm text-red-500">{errors.last_name}</p>
+              )}
             </div>
             <div className="space-y-3">
               <Label htmlFor="phone_number" className="text-sm font-medium text-muted-foreground">
@@ -287,8 +363,13 @@ const Settings = () => {
                 value={form.phone_number || ''}
                 onChange={handleChange}
                 placeholder="+77071234567"
-                className="focus:border-primary focus:ring-1 focus:ring-primary"
+                className={`focus:ring-1 focus:ring-primary ${
+                  errors.phone_number ? 'border-red-500 focus:border-red-500' : 'focus:border-primary'
+                }`}
               />
+              {errors.phone_number && (
+                <p className="text-sm text-red-500">{errors.phone_number}</p>
+              )}
             </div>
             <div className="space-y-3">
               <Label htmlFor="date_of_birth" className="text-sm font-medium text-muted-foreground">
@@ -300,8 +381,13 @@ const Settings = () => {
                 type="date"
                 value={form.date_of_birth || ''}
                 onChange={handleChange}
-                className="focus:border-primary focus:ring-1 focus:ring-primary"
+                className={`focus:ring-1 focus:ring-primary ${
+                  errors.date_of_birth ? 'border-red-500 focus:border-red-500' : 'focus:border-primary'
+                }`}
               />
+              {errors.date_of_birth && (
+                <p className="text-sm text-red-500">{errors.date_of_birth}</p>
+              )}
             </div>
             <div className="space-y-3 md:col-span-2 order-first">
               <Label className="text-sm font-medium text-muted-foreground">Аватар</Label>
@@ -394,8 +480,13 @@ const Settings = () => {
                 value={form.height ?? ''}
                 onChange={handleNumberChange}
                 placeholder="e.g. 180"
-                className="focus:border-primary focus:ring-1 focus:ring-primary"
+                className={`focus:ring-1 focus:ring-primary ${
+                  errors.height ? 'border-red-500 focus:border-red-500' : 'focus:border-primary'
+                }`}
               />
+              {errors.height && (
+                <p className="text-sm text-red-500">{errors.height}</p>
+              )}
             </div>
             <div className="space-y-3">
               <Label htmlFor="weight" className="text-sm font-medium text-muted-foreground">
@@ -408,8 +499,13 @@ const Settings = () => {
                 value={form.weight ?? ''}
                 onChange={handleNumberChange}
                 placeholder="e.g. 75"
-                className="focus:border-primary focus:ring-1 focus:ring-primary"
+                className={`focus:ring-1 focus:ring-primary ${
+                  errors.weight ? 'border-red-500 focus:border-red-500' : 'focus:border-primary'
+                }`}
               />
+              {errors.weight && (
+                <p className="text-sm text-red-500">{errors.weight}</p>
+              )}
             </div>
             <div className="space-y-3">
               <Label htmlFor="chest" className="text-sm font-medium text-muted-foreground">
@@ -422,8 +518,13 @@ const Settings = () => {
                 value={form.chest ?? ''}
                 onChange={handleNumberChange}
                 placeholder="e.g. 96"
-                className="focus:border-primary focus:ring-1 focus:ring-primary"
+                className={`focus:ring-1 focus:ring-primary ${
+                  errors.chest ? 'border-red-500 focus:border-red-500' : 'focus:border-primary'
+                }`}
               />
+              {errors.chest && (
+                <p className="text-sm text-red-500">{errors.chest}</p>
+              )}
             </div>
             <div className="space-y-3">
               <Label htmlFor="waist" className="text-sm font-medium text-muted-foreground">
@@ -436,8 +537,13 @@ const Settings = () => {
                 value={form.waist ?? ''}
                 onChange={handleNumberChange}
                 placeholder="e.g. 78"
-                className="focus:border-primary focus:ring-1 focus:ring-primary"
+                className={`focus:ring-1 focus:ring-primary ${
+                  errors.waist ? 'border-red-500 focus:border-red-500' : 'focus:border-primary'
+                }`}
               />
+              {errors.waist && (
+                <p className="text-sm text-red-500">{errors.waist}</p>
+              )}
             </div>
             <div className="space-y-3">
               <Label htmlFor="hips" className="text-sm font-medium text-muted-foreground">
@@ -450,8 +556,13 @@ const Settings = () => {
                 value={form.hips ?? ''}
                 onChange={handleNumberChange}
                 placeholder="e.g. 100"
-                className="focus:border-primary focus:ring-1 focus:ring-primary"
+                className={`focus:ring-1 focus:ring-primary ${
+                  errors.hips ? 'border-red-500 focus:border-red-500' : 'focus:border-primary'
+                }`}
               />
+              {errors.hips && (
+                <p className="text-sm text-red-500">{errors.hips}</p>
+              )}
             </div>
           </div>
         </div>

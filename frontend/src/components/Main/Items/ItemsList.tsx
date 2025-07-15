@@ -116,47 +116,6 @@ const ItemsList = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="mb-8"
-      >
-        <h1 className="mb-4 font-display text-3xl font-bold tracking-tight">Каталог</h1>
-        <p className="text-muted-foreground">
-          Откройте для себя уникальные вещи и создайте свой неповторимый стиль
-        </p>
-      </motion.div>
-
-      {/* Search and Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-        className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <form onSubmit={handleSearch} className="flex w-full max-w-md items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Поиск товаров..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Button type="submit" size="icon">
-            <Search className="h-4 w-4" />
-          </Button>
-        </form>
-        
-        <Button variant="outline" className="flex items-center gap-2">
-          <Filter className="h-4 w-4" />
-          Фильтры
-        </Button>
-      </motion.div>
-
       {/* Loading State */}
       {loading && (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

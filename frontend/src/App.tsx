@@ -39,6 +39,8 @@ import OutfitBuilder from './components/Main/Outfits/OutfitBuilder'
 import CreateOutfit from './components/Main/Outfits/CreateOutfit'
 import EditOutfit from './components/Main/Outfits/EditOutfit'
 import LamodaParser from './components/Admin/LamodaParser'
+import ShopsList from './components/Main/Shops/ShopsList'
+import ShopItemDetail from './components/Main/Shops/ShopItemDetail'
 
 function App() {
   // Инициализация PWA
@@ -71,6 +73,8 @@ function App() {
               <Route path="/outfits/builder" element={<OutfitBuilder />} />
               <Route path="/outfits/:id" element={<OutfitDetail />} />
               <Route path="/outfits/:id/edit" element={<EditOutfit />} />
+              <Route path="/shops" element={<ShopsList />} />
+              <Route path="/shops/:moderatorId/items/:id" element={<ShopItemDetail />} />
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/history" element={<History />} />
               <Route path="/cart" element={<Cart />} />
