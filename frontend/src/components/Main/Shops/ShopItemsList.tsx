@@ -6,7 +6,7 @@ import { Card, CardContent } from '../../ui/card'
 import { Input } from '../../ui/input'
 import { Button } from '../../ui/button'
 import { Badge } from '../../ui/badge'
-import { Search, Filter, Heart, ShoppingBag, Store, Package, User, ChevronLeft } from 'lucide-react'
+import { Search,  Heart, ShoppingBag, ChevronLeft } from 'lucide-react'
 import { useFavorites } from '../../../context/FavoritesContext'
 import ImageCarousel from '../../common/ImageCarousel'
 import ItemImage from '../../common/ItemImage'
@@ -48,9 +48,7 @@ const ShopItemsList = () => {
     const loadShop = async () => {
       if (!moderatorId) return
       try {
-        console.log('Loading shop data for moderatorId:', moderatorId)
         const shopData = await shopsApi.getShop(parseInt(moderatorId))
-        console.log('Shop data loaded:', shopData)
         setShop(shopData)
       } catch (error) {
         console.error('Error fetching shop:', error)
@@ -69,7 +67,7 @@ const ShopItemsList = () => {
       setItems(data)
       setHasMore(data.length === 20)
       setLoading(false)
-    }).catch(error => {
+    }).catch(() => {
       setLoading(false)
     })
   }, [search, moderatorId])
@@ -190,20 +188,6 @@ const ShopItemsList = () => {
         >
           <div className="mb-4">
             <h1 className="mb-2 font-display text-3xl font-bold tracking-tight">{shop.name}</h1>
-            <div className="flex items-center gap-4 text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span>{shop.moderator_name}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                <span>{shop.items_count} товаров</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Store className="h-4 w-4" />
-                <span>Магазин</span>
-              </div>
-            </div>
           </div>
         </motion.div>
       )}

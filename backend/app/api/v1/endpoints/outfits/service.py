@@ -14,6 +14,7 @@ from app.db.models.user import User
 from app.db.models.associations import user_favorite_outfits, OutfitView
 from app.db.models.comment import Comment
 from .schemas import OutfitCreate, OutfitUpdate, OutfitOut, OutfitCommentCreate, OutfitCommentOut, OutfitItemBase
+from app.api.v1.endpoints.items.service import _comment_with_likes
 
 # Упрощенная система категоризации для 5 строгих категорий образа
 # Каждая категория содержит исчерпывающий список ключевых слов

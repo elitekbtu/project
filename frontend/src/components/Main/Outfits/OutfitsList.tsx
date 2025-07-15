@@ -27,11 +27,9 @@ const OutfitsList = () => {
 
   // Функция для загрузки данных
   const fetchOutfits = async (pageToLoad: number, q?: string) => {
-    console.log(`📡 Outfits Fetching page: ${pageToLoad}, search: "${q}"`)
     const params: any = { page: pageToLoad }
     if (q !== undefined && q !== null && q !== '') params.q = q
     const data = await listOutfits(params)
-    console.log(`✅ Outfits Received ${data.length} items for page ${pageToLoad}`)
     return data
   }
 
@@ -50,7 +48,6 @@ const OutfitsList = () => {
 
   // Загрузка следующих страниц
   useEffect(() => {
-    console.log(`🔄 Outfits Page changed to: ${page}`)
     if (page === 1) return
     setLoadingMore(true)
     fetchOutfits(page, search).then(data => {
@@ -62,7 +59,6 @@ const OutfitsList = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log(`🔍 Outfits Search submitted: "${search}"`)
     setSearch(search) // триггерит useEffect выше
   }
 
@@ -70,14 +66,11 @@ const OutfitsList = () => {
   const observer = useRef<IntersectionObserver | null>(null)
   const lastItemRef = useCallback(
     (node: HTMLDivElement | null) => {
-      console.log(`👁️ Outfits Observer callback: loading=${loading}, hasMore=${hasMore}, node=${!!node}`)
       if (loading) return
       if (!hasMore) return
       if (observer.current) observer.current.disconnect()
       observer.current = new IntersectionObserver((entries) => {
-        console.log(`🎯 Outfits Intersection detected: ${entries[0].isIntersecting}`)
         if (entries[0].isIntersecting) {
-          console.log(`📄 Outfits Loading next page: ${page + 1}`)
           setPage((prev) => prev + 1)
         }
       })
