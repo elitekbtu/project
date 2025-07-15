@@ -54,7 +54,7 @@ export const shopsApi = {
       })
     }
     
-    const response = await api.get(`/api/items?${params}`)
+    const response = await api.get(`/api/items/?${params}`)
     return {
       items: response.data,
       total: response.headers['x-total-count'] ? parseInt(response.headers['x-total-count']) : response.data.length,
