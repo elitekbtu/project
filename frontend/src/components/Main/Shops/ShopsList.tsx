@@ -142,7 +142,7 @@ const ShopsList = () => {
           {shops.map((shop) => (
             <motion.div key={shop.id} variants={itemVariants}>
               <Card className="group overflow-hidden transition-all hover:shadow-lg border-0 shadow-sm">
-                <Link to={`/shops/${shop.id}/items`}>
+                <Link to={`/shops/${shop.moderator_id}/items`}>
                   <div className="relative aspect-[4/3] overflow-hidden">
                     {shop.avatar ? (
                       <img

@@ -134,12 +134,12 @@ const ShopItemDetail = () => {
       <p className="text-muted-foreground mb-6 max-w-md mx-auto">
         Возможно, товар был удален или перемещен
       </p>
-      <Button asChild variant="outline" className="rounded-full">
-        <Link to={`/shops/${moderatorId}`}>
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Вернуться в магазин
-        </Link>
-      </Button>
+              <Button asChild variant="outline" className="rounded-full">
+          <Link to={`/shops/${moderatorId}/items`}>
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Вернуться в магазин
+          </Link>
+        </Button>
     </motion.div>
   )
 
@@ -171,7 +171,7 @@ const ShopItemDetail = () => {
         className="mb-6"
       >
         <Button asChild variant="ghost" className="pl-0 hover:bg-transparent">
-          <Link to={`/shops/${moderatorId}`} className="flex items-center text-sm text-muted-foreground hover:text-foreground">
+          <Link to={`/shops/${moderatorId}/items`} className="flex items-center text-sm text-muted-foreground hover:text-foreground">
             <ChevronLeft className="mr-1 h-4 w-4" />
             Назад в магазин
           </Link>

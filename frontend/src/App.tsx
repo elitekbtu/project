@@ -40,6 +40,7 @@ import CreateOutfit from './components/Main/Outfits/CreateOutfit'
 import EditOutfit from './components/Main/Outfits/EditOutfit'
 import LamodaParser from './components/Admin/LamodaParser'
 import ShopsList from './components/Main/Shops/ShopsList'
+import ShopItemsList from './components/Main/Shops/ShopItemsList'
 import ShopItemDetail from './components/Main/Shops/ShopItemDetail'
 
 function App() {
@@ -75,6 +76,7 @@ function App() {
               <Route path="/outfits/:id/edit" element={<EditOutfit />} />
               <Route path="/shops" element={<ShopsList />} />
               <Route path="/shops/:moderatorId/items/:id" element={<ShopItemDetail />} />
+              <Route path="/shops/:moderatorId/items" element={<ShopItemsList />} />
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/history" element={<History />} />
               <Route path="/cart" element={<Cart />} />
