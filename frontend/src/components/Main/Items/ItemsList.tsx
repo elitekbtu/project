@@ -20,6 +20,7 @@ interface Item {
   image_urls?: string[] | null
   brand?: string | null
   category?: string | null
+  variants?: any[] | null
 }
 
 const ItemsList = () => {
@@ -108,10 +109,37 @@ const ItemsList = () => {
 
   const getDisplayPrice = (item: Item): number | undefined => {
     if ((item as any).variants && (item as any).variants.length > 0) {
-      const prices = (item as any).variants.map((v: any) => v.price).filter((p: any) => typeof p === 'number') as number[]
-      if (prices.length > 0) return Math.min(...prices)
+      const prices = (item as any).variants
+        .map((v: any) => v.price)
+        .filter((p: any) => typeof p === 'number' && p !== null) as number[]
+      
+      if (prices.length > 0) {
+        const minPrice = Math.min(...prices)
+        return minPrice
+      }
     }
     return item.price ?? undefined
+  }
+
+  const getDiscountInfo = (item: Item): { hasDiscount: boolean; originalPrice?: number; discountPercent?: number } => {
+    
+    if (!item.price || typeof item.price !== 'number') {
+      return { hasDiscount: false }
+    }
+
+    const displayPrice = getDisplayPrice(item)
+    
+    if (!displayPrice || displayPrice >= item.price) {
+      return { hasDiscount: false }
+    }
+
+    const discountPercent = Math.round(((item.price - displayPrice) / item.price) * 100)
+    
+    return {
+      hasDiscount: true,
+      originalPrice: item.price,
+      discountPercent
+    }
   }
 
   return (
@@ -200,6 +228,18 @@ const ItemsList = () => {
                           fallbackClassName="h-full w-full"
                         />
                       )}
+                      {/* Discount Badge */}
+                      {(() => {
+                        const discountInfo = getDiscountInfo(item)
+                        return discountInfo.hasDiscount ? (
+                          <div className="absolute top-3 left-3">
+                            <Badge className="bg-red-500 text-white text-xs font-bold">
+                              -{discountInfo.discountPercent}%
+                            </Badge>
+                          </div>
+                        ) : null
+                      })()}
+                      
                       <div className="absolute top-3 right-3 opacity-0 transition-opacity group-hover:opacity-100">
                         <Button
                           size="icon"
@@ -232,9 +272,20 @@ const ItemsList = () => {
                       </div>
                       {(() => {
                         const price = getDisplayPrice(item)
-                        return price !== undefined ? (
-                          <p className="font-semibold">{price.toLocaleString()} ₸</p>
-                        ) : null
+                        const discountInfo = getDiscountInfo(item)
+                        
+                        if (price === undefined) return null
+                        
+                        return (
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">{price.toLocaleString()} ₸</p>
+                            {discountInfo.hasDiscount && discountInfo.originalPrice && (
+                              <p className="text-sm text-muted-foreground line-through">
+                                {discountInfo.originalPrice.toLocaleString()} ₸
+                              </p>
+                            )}
+                          </div>
+                        )
                       })()}
                     </CardContent>
                   </Link>

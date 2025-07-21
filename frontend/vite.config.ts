@@ -17,7 +17,7 @@ export default defineConfig({
         injectionPoint: undefined
       },
       devOptions: {
-        enabled: false, // Completely disable in development
+        enabled: false,
         type: 'module'
       },
       workbox: {

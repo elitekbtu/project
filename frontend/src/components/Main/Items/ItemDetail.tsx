@@ -390,6 +390,29 @@ const ItemDetail = () => {
                 <Card className="group overflow-hidden transition-all hover:shadow-lg border-0 shadow-sm">
                   <Link to={`/items/${it.id}`} className="block">
                     <div className="relative aspect-[3/4] overflow-hidden">
+                      {/* Discount Badge */}
+                      {(() => {
+                        let price: number | undefined = undefined
+                        if ((it as any).variants && (it as any).variants.length > 0) {
+                          const prices = (it as any).variants
+                            .map((v: any) => v.price)
+                            .filter((p: any) => typeof p === 'number' && p !== null) as number[]
+                          if (prices.length > 0) price = Math.min(...prices)
+                        }
+                        if (price === undefined) price = it.price ?? undefined
+                        
+                        const hasDiscount = it.price && price && price < it.price
+                        const discountPercent = hasDiscount ? Math.round(((it.price - price) / it.price) * 100) : 0
+                        
+                        return hasDiscount ? (
+                          <div className="absolute top-3 left-3 z-10">
+                            <Badge className="bg-red-500 text-white text-xs font-bold">
+                              -{discountPercent}%
+                            </Badge>
+                          </div>
+                        ) : null
+                      })()}
+                      
                       {it.image_url ? (
                         <img
                           src={it.image_url}
@@ -419,12 +442,26 @@ const ItemDetail = () => {
                       {(() => {
                         let price: number | undefined = undefined
                         if ((it as any).variants && (it as any).variants.length > 0) {
-                          const prices = (it as any).variants.map((v: any) => v.price).filter((p: any) => typeof p === 'number') as number[]
+                          const prices = (it as any).variants
+                            .map((v: any) => v.price)
+                            .filter((p: any) => typeof p === 'number' && p !== null) as number[]
                           if (prices.length > 0) price = Math.min(...prices)
                         }
                         if (price === undefined) price = it.price ?? undefined
+                        
+                        // Calculate discount
+                        const hasDiscount = it.price && price && price < it.price
+                        const discountPercent = hasDiscount ? Math.round(((it.price - price) / it.price) * 100) : 0
+                        
                         return price !== undefined ? (
-                          <p className="font-semibold">{price.toLocaleString()} ₸</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">{price.toLocaleString()} ₸</p>
+                            {hasDiscount && (
+                              <p className="text-sm text-muted-foreground line-through">
+                                {it.price.toLocaleString()} ₸
+                              </p>
+                            )}
+                          </div>
                         ) : null
                       })()}
                     </CardContent>
