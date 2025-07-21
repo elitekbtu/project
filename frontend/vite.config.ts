@@ -46,20 +46,5 @@ export default defineConfig({
       '@features': pathResolve(rootDir, 'src/features'),
       '@shared': pathResolve(rootDir, 'src/shared'),
     },
-  },
-  server: {
-    host: '0.0.0.0',
-    port: 80,
-  },
-  preview: {
-    host: '0.0.0.0',
-    port: 80,
-    allowedHosts: [
-      'trc.works',
-      'www.trc.works',
-      'localhost',
-      '127.0.0.1',
-      '164.90.225.127'
-    ]
-  },
+  }
 })
