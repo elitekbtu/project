@@ -11,6 +11,10 @@ import { useFavorites } from '../../../context/FavoritesContext'
 import ImageCarousel from '../../common/ImageCarousel'
 import ItemImage from '../../common/ItemImage'
 import { CATEGORY_LABELS } from '../../../constants'
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../../ui/select'
+import { Switch } from '../../ui/switch'
+import { Popover, PopoverTrigger, PopoverContent } from '../../ui/popover'
+import { Label } from '../../ui/label'
 
 interface Item {
   id: number
@@ -31,33 +35,53 @@ const ItemsList = () => {
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const { isFavorite, toggleFavorite } = useFavorites()
+  const [category, setCategory] = useState<string | undefined>(undefined)
+  const [onlyDiscount, setOnlyDiscount] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [minPrice, setMinPrice] = useState<string>('')
+  const [maxPrice, setMaxPrice] = useState<string>('')
 
   // Функция для загрузки данных
-  const fetchItems = async (pageToLoad: number, q?: string) => {
+  const fetchItems = async (pageToLoad: number, q?: string, cat?: string | undefined, discount?: boolean) => {
     const params: any = { page: pageToLoad }
     if (q !== undefined && q !== null && q !== '') params.q = q
+    if (cat && cat !== 'all') params.category = cat
     const data = await listItems(params)
-    return data
+    // Фильтрация по скидке и цене на клиенте
+    let filteredData = data
+    if (discount) {
+      filteredData = filteredData.filter((item: Item) => getDiscountInfo(item).hasDiscount)
+    }
+    if (minPrice || maxPrice) {
+      filteredData = filteredData.filter((item: Item) => {
+        const price = getDisplayPrice(item)
+        if (price === undefined) return false
+        const min = minPrice ? parseFloat(minPrice) : 0
+        const max = maxPrice ? parseFloat(maxPrice) : Infinity
+        return price >= min && price <= max
+      })
+    }
+    return filteredData
   }
 
-  // Загрузка первой страницы или нового поиска
+  // Загрузка первой страницы или нового поиска/фильтра
   useEffect(() => {
     setLoading(true)
     setItems([])
     setHasMore(true)
     setPage(1)
-    fetchItems(1, search).then(data => {
+    fetchItems(1, search, category, onlyDiscount).then(data => {
       setItems(data)
       setHasMore(data.length === 20)
       setLoading(false)
     })
-  }, [search])
+  }, [search, category, onlyDiscount, minPrice, maxPrice])
 
   // Загрузка следующих страниц
   useEffect(() => {
     if (page === 1) return
     setLoadingMore(true)
-    fetchItems(page, search).then(data => {
+    fetchItems(page, search, category, onlyDiscount).then(data => {
       setItems(prev => [...prev, ...data])
       setHasMore(data.length === 20)
       setLoadingMore(false)
@@ -89,8 +113,8 @@ const ItemsList = () => {
   // Fetch next page when page state changes (except first, already fetched)
   useEffect(() => {
     if (page === 1) return
-    fetchItems(page, search)
-  }, [page])
+    fetchItems(page, search, category, onlyDiscount)
+  }, [page, search, category, onlyDiscount])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -176,13 +200,59 @@ const ItemsList = () => {
             <Search className="h-4 w-4" />
           </Button>
         </form>
-
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Фильтры
-          </Button>
-        </div>
+        <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              Фильтры
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64">
+            <div className="flex flex-col gap-4">
+              <div>
+                <Label className="mb-1 block">Категория</Label>
+                <Select value={category || ""} onValueChange={v => setCategory(v === "" ? undefined : v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Все категории" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Все категории</SelectItem>
+                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="discount-switch">Только со скидкой</Label>
+                <Switch id="discount-switch" checked={onlyDiscount} onCheckedChange={setOnlyDiscount} />
+              </div>
+              <div className="space-y-2">
+                <Label className="block">Цена</Label>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="От"
+                      value={minPrice}
+                      onChange={(e) => setMinPrice(e.target.value)}
+                      type="number"
+                      min="0"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      placeholder="До"
+                      value={maxPrice}
+                      onChange={(e) => setMaxPrice(e.target.value)}
+                      type="number"
+                      min="0"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
       </motion.div>
 
       {/* Loading State */}
