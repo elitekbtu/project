@@ -5,6 +5,11 @@ import { Loader2, PlusCircle, Pencil, Trash2 } from 'lucide-react'
 import api from '../../api/client'
 import { Button } from '../../components/ui/button'
 import { useToast } from '../../components/ui/use-toast'
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../../components/ui/select'
+import { Switch } from '../../components/ui/switch'
+import { Popover, PopoverTrigger, PopoverContent } from '../../components/ui/popover'
+import { Label } from '../../components/ui/label'
+import { CATEGORY_LABELS } from '../../constants'
 
 interface Item {
   id: number
@@ -22,6 +27,30 @@ const ItemsAdmin = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const { toast } = useToast()
+  const [category, setCategory] = useState<string | undefined>(undefined)
+  const [minPrice, setMinPrice] = useState<string>('')
+  const [maxPrice, setMaxPrice] = useState<string>('')
+  const [onlyWithPrice, setOnlyWithPrice] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+
+  const filterItems = (data: Item[]) => {
+    let filtered = data
+    if (category && CATEGORY_LABELS[category]) {
+      filtered = filtered.filter((item) => (item as any).category === category)
+    }
+    if (onlyWithPrice) {
+      filtered = filtered.filter((item) => typeof item.price === 'number')
+    }
+    if (minPrice || maxPrice) {
+      filtered = filtered.filter((item) => {
+        if (typeof item.price !== 'number') return false
+        const min = minPrice ? parseFloat(minPrice) : 0
+        const max = maxPrice ? parseFloat(maxPrice) : Infinity
+        return item.price! >= min && item.price! <= max
+      })
+    }
+    return filtered
+  }
 
   const fetchItems = async (pageToLoad = 1, append = false, q?: string) => {
     try {
@@ -30,8 +59,9 @@ const ItemsAdmin = () => {
       const params: any = { page: pageToLoad }
       if (q) params.q = q
       const resp = await api.get<Item[]>('/api/items/', { params })
-      setItems(prev => append ? [...prev, ...resp.data] : resp.data)
-      setHasMore(resp.data.length === 20)
+      const filtered = filterItems(resp.data)
+      setItems(prev => append ? [...prev, ...filtered] : filtered)
+      setHasMore(filtered.length === 20)
     } catch (err) {
       toast({
         variant: 'destructive',
@@ -112,12 +142,68 @@ const ItemsAdmin = () => {
           />
           <Button type="submit">Поиск</Button>
         </form>
-        <Button asChild>
-          <Link to="/admin/items/new" className="flex items-center gap-2">
-            <PlusCircle className="h-4 w-4" />
-            Добавить вещь
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline">Фильтры</Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64">
+              <div className="flex flex-col gap-4">
+                {CATEGORY_LABELS && (
+                  <div>
+                    <Label className="mb-1 block">Категория</Label>
+                    <Select value={category || 'all'} onValueChange={v => setCategory(v === 'all' ? undefined : v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Все категории" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Все категории</SelectItem>
+                        {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="only-price-switch">Только с ценой</Label>
+                  <Switch id="only-price-switch" checked={onlyWithPrice} onCheckedChange={setOnlyWithPrice} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="block">Цена</Label>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <input
+                        placeholder="От"
+                        value={minPrice}
+                        onChange={(e) => setMinPrice(e.target.value)}
+                        type="number"
+                        min="0"
+                        className="border rounded px-2 py-1 w-full"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        placeholder="До"
+                        value={maxPrice}
+                        onChange={(e) => setMaxPrice(e.target.value)}
+                        type="number"
+                        min="0"
+                        className="border rounded px-2 py-1 w-full"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button asChild>
+            <Link to="/admin/items/new" className="flex items-center gap-2">
+              <PlusCircle className="h-4 w-4" />
+              Добавить вещь
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">

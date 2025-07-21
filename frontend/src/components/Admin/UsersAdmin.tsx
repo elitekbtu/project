@@ -6,6 +6,10 @@ import api from '../../api/client'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { useToast } from '../../components/ui/use-toast'
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../../components/ui/select'
+import { Switch } from '../../components/ui/switch'
+import { Popover, PopoverTrigger, PopoverContent } from '../../components/ui/popover'
+import { Label } from '../../components/ui/label'
 
 interface User {
   id: number
@@ -25,6 +29,22 @@ const UsersAdmin = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const { toast } = useToast()
+  const [role, setRole] = useState<string | undefined>(undefined)
+  const [onlyActive, setOnlyActive] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+
+  const filterUsers = (data: User[]) => {
+    let filtered = data
+    if (role && role !== 'all') {
+      if (role === 'admin') filtered = filtered.filter(u => u.is_admin)
+      else if (role === 'moderator') filtered = filtered.filter(u => u.is_moderator && !u.is_admin)
+      else if (role === 'user') filtered = filtered.filter(u => !u.is_admin && !u.is_moderator)
+    }
+    if (onlyActive) {
+      filtered = filtered.filter(u => u.is_active)
+    }
+    return filtered
+  }
 
   const fetchUsers = async (pageToLoad = 1, append = false, q?: string) => {
     try {
@@ -33,8 +53,9 @@ const UsersAdmin = () => {
       const params: any = { page: pageToLoad }
       if (q) params.q = q
       const resp = await api.get<User[]>('/api/users/', { params })
-      setUsers(prev => append ? [...prev, ...resp.data] : resp.data)
-      setHasMore(resp.data.length === 20)
+      const filtered = filterUsers(resp.data)
+      setUsers(prev => append ? [...prev, ...filtered] : filtered)
+      setHasMore(filtered.length === 20)
     } catch (err) {
       toast({
         variant: 'destructive',
@@ -115,12 +136,41 @@ const UsersAdmin = () => {
           />
           <Button type="submit">Поиск</Button>
         </form>
-        <Button asChild>
-          <Link to="/admin/users/new" className="flex items-center gap-2">
-            <PlusCircle className="h-4 w-4" />
-            Добавить пользователя
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline">Фильтры</Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64">
+              <div className="flex flex-col gap-4">
+                <div>
+                  <Label className="mb-1 block">Роль</Label>
+                  <Select value={role || 'all'} onValueChange={v => setRole(v === 'all' ? undefined : v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Все роли" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Все роли</SelectItem>
+                      <SelectItem value="admin">Админ</SelectItem>
+                      <SelectItem value="moderator">Модератор</SelectItem>
+                      <SelectItem value="user">Пользователь</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="only-active-switch">Только активные</Label>
+                  <Switch id="only-active-switch" checked={onlyActive} onCheckedChange={setOnlyActive} />
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button asChild>
+            <Link to="/admin/users/new" className="flex items-center gap-2">
+              <PlusCircle className="h-4 w-4" />
+              Добавить пользователя
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
