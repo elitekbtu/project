@@ -107,6 +107,17 @@ def list_items(
             "created_at": item.created_at.isoformat() if item.created_at else None,
             "updated_at": item.updated_at.isoformat() if item.updated_at else None,
             "images": [{"id": img.id, "url": img.image_url, "position": img.position} for img in item.images] if hasattr(item, 'images') else [],
+            "image_urls": [img.image_url for img in item.images] if hasattr(item, 'images') and item.images else [],
+            "variants": [
+                {
+                    "id": var.id,
+                    "size": var.size,
+                    "color": var.color,
+                    "sku": var.sku,
+                    "stock": var.stock,
+                    "price": var.price
+                } for var in item.variants
+            ] if hasattr(item, 'variants') and item.variants else [],
             "is_favorite": getattr(item, 'is_favorite', False)
         }
         items_dict.append(item_dict)

@@ -301,6 +301,10 @@ def trending_items(db: Session, limit: int = 20):
     query = (
         db.query(Item)
         .join(sub, Item.id == sub.c.item_id)
+        .options(
+            selectinload(Item.images),
+            selectinload(Item.variants),
+        )
         .order_by(desc("likes"))
         .limit(limit)
     )
@@ -308,13 +312,20 @@ def trending_items(db: Session, limit: int = 20):
 
 
 def items_by_collection(db: Session, name: str):
-    items = db.query(Item).filter(Item.collection == name).all()
+    items = db.query(Item).filter(Item.collection == name).options(
+        selectinload(Item.images),
+        selectinload(Item.variants),
+    ).all()
     return [ItemOut.from_orm(i) for i in items]
 
 
 def list_favorite_items(db: Session, user: User, skip: int = 0, limit: int = 20):
     """Return paginated favorite items for the user."""
     query = user.favorites.order_by(desc(Item.created_at))  # type: ignore
+    query = query.options(
+        selectinload(Item.images),
+        selectinload(Item.variants),
+    )
     return query.offset(skip).limit(limit).all()
 
 
@@ -330,7 +341,11 @@ def viewed_items(db: Session, user: User, skip: int = 0, limit: int = 20):
     if not item_ids:
         return []
     # Preserve order based on views sequence
-    items_map = {item.id: item for item in db.query(Item).filter(Item.id.in_(item_ids)).all()}
+    items = db.query(Item).filter(Item.id.in_(item_ids)).options(
+        selectinload(Item.images),
+        selectinload(Item.variants),
+    ).all()
+    items_map = {item.id: item for item in items}
     return [items_map[iid] for iid in item_ids if iid in items_map]
 
 
@@ -349,6 +364,11 @@ def similar_items(db: Session, item_id: int, limit: int = 10):
         query = query.filter(Item.category == target.category)
     if target.style:
         query = query.filter(Item.style == target.style)
+
+    query = query.options(
+        selectinload(Item.images),
+        selectinload(Item.variants),
+    )
 
     return query.limit(limit).all()
 
