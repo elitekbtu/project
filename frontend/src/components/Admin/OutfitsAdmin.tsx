@@ -9,6 +9,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '.
 import { Switch } from '../../components/ui/switch'
 import { Popover, PopoverTrigger, PopoverContent } from '../../components/ui/popover'
 import { Label } from '../../components/ui/label'
+import { CATEGORY_LABELS } from '../../constants'
 
 interface Outfit {
   id: number
@@ -33,26 +34,9 @@ const OutfitsAdmin = () => {
   const [maxPrice, setMaxPrice] = useState<string>('')
   const [onlyWithPrice, setOnlyWithPrice] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [category, setCategory] = useState<string | undefined>(undefined)
 
   const styleOptions = Array.from(new Set(outfits.map(o => o.style).filter(Boolean)))
-  const filterOutfits = (data: Outfit[]) => {
-    let filtered = data
-    if (style && style !== 'all') {
-      filtered = filtered.filter((o) => o.style === style)
-    }
-    if (onlyWithPrice) {
-      filtered = filtered.filter((o) => typeof o.total_price === 'number')
-    }
-    if (minPrice || maxPrice) {
-      filtered = filtered.filter((o) => {
-        if (typeof o.total_price !== 'number') return false
-        const min = minPrice ? parseFloat(minPrice) : 0
-        const max = maxPrice ? parseFloat(maxPrice) : Infinity
-        return o.total_price! >= min && o.total_price! <= max
-      })
-    }
-    return filtered
-  }
 
   const fetchOutfits = async (pageToLoad = 1, append = false, q?: string) => {
     try {
@@ -60,10 +44,14 @@ const OutfitsAdmin = () => {
       else setLoading(true)
       const params: any = { page: pageToLoad }
       if (q) params.q = q
+      if (category) params.category = category
+      if (onlyWithPrice) params.min_price = 0
+      if (minPrice) params.min_price = parseFloat(minPrice)
+      if (maxPrice) params.max_price = parseFloat(maxPrice)
+      if (style && style !== 'all') params.style = style
       const resp = await api.get<Outfit[]>('/api/outfits/', { params })
-      const filtered = filterOutfits(resp.data)
-      setOutfits(prev => append ? [...prev, ...filtered] : filtered)
-      setHasMore(filtered.length === 20)
+      setOutfits(prev => append ? [...prev, ...resp.data] : resp.data)
+      setHasMore(resp.data.length === 20)
     } catch (err) {
       toast({
         variant: 'destructive',
@@ -79,7 +67,7 @@ const OutfitsAdmin = () => {
   useEffect(() => {
     setPage(1)
     fetchOutfits(1, false, searchQuery)
-  }, [searchQuery])
+  }, [searchQuery, category, minPrice, maxPrice, onlyWithPrice, style])
 
   useEffect(() => {
     if (page === 1) return
@@ -152,8 +140,22 @@ const OutfitsAdmin = () => {
             <PopoverContent className="w-64">
               <div className="flex flex-col gap-4">
                 <div>
+                  <Label className="mb-1 block">Категория</Label>
+                  <Select value={category || 'all'} onValueChange={v => { setCategory(v === 'all' ? undefined : v); setPage(1); }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Все категории" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Все категории</SelectItem>
+                      {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label className="mb-1 block">Стиль</Label>
-                  <Select value={style || 'all'} onValueChange={v => setStyle(v === 'all' ? undefined : v)}>
+                  <Select value={style || 'all'} onValueChange={v => { setStyle(v === 'all' ? undefined : v); setPage(1); }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Все стили" />
                     </SelectTrigger>
@@ -167,7 +169,7 @@ const OutfitsAdmin = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="only-price-switch">Только с ценой</Label>
-                  <Switch id="only-price-switch" checked={onlyWithPrice} onCheckedChange={setOnlyWithPrice} />
+                  <Switch id="only-price-switch" checked={onlyWithPrice} onCheckedChange={checked => { setOnlyWithPrice(checked); setPage(1); }} />
                 </div>
                 <div className="space-y-2">
                   <Label className="block">Цена</Label>
@@ -176,7 +178,7 @@ const OutfitsAdmin = () => {
                       <input
                         placeholder="От"
                         value={minPrice}
-                        onChange={(e) => setMinPrice(e.target.value)}
+                        onChange={(e) => { setMinPrice(e.target.value); setPage(1); }}
                         type="number"
                         min="0"
                         className="border rounded px-2 py-1 w-full"
@@ -186,7 +188,7 @@ const OutfitsAdmin = () => {
                       <input
                         placeholder="До"
                         value={maxPrice}
-                        onChange={(e) => setMaxPrice(e.target.value)}
+                        onChange={(e) => { setMaxPrice(e.target.value); setPage(1); }}
                         type="number"
                         min="0"
                         className="border rounded px-2 py-1 w-full"

@@ -33,35 +33,19 @@ const ItemsAdmin = () => {
   const [onlyWithPrice, setOnlyWithPrice] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
 
-  const filterItems = (data: Item[]) => {
-    let filtered = data
-    if (category && CATEGORY_LABELS[category]) {
-      filtered = filtered.filter((item) => (item as any).category === category)
-    }
-    if (onlyWithPrice) {
-      filtered = filtered.filter((item) => typeof item.price === 'number')
-    }
-    if (minPrice || maxPrice) {
-      filtered = filtered.filter((item) => {
-        if (typeof item.price !== 'number') return false
-        const min = minPrice ? parseFloat(minPrice) : 0
-        const max = maxPrice ? parseFloat(maxPrice) : Infinity
-        return item.price! >= min && item.price! <= max
-      })
-    }
-    return filtered
-  }
-
   const fetchItems = async (pageToLoad = 1, append = false, q?: string) => {
     try {
       if (append) setLoadingMore(true)
       else setLoading(true)
       const params: any = { page: pageToLoad }
       if (q) params.q = q
+      if (category) params.category = category
+      if (onlyWithPrice) params.min_price = 0
+      if (minPrice) params.min_price = parseFloat(minPrice)
+      if (maxPrice) params.max_price = parseFloat(maxPrice)
       const resp = await api.get<Item[]>('/api/items/', { params })
-      const filtered = filterItems(resp.data)
-      setItems(prev => append ? [...prev, ...filtered] : filtered)
-      setHasMore(filtered.length === 20)
+      setItems(prev => append ? [...prev, ...resp.data] : resp.data)
+      setHasMore(resp.data.length === 20)
     } catch (err) {
       toast({
         variant: 'destructive',
@@ -77,7 +61,7 @@ const ItemsAdmin = () => {
   useEffect(() => {
     setPage(1)
     fetchItems(1, false, searchQuery)
-  }, [searchQuery])
+  }, [searchQuery, category, minPrice, maxPrice, onlyWithPrice])
 
   useEffect(() => {
     if (page === 1) return
@@ -152,7 +136,7 @@ const ItemsAdmin = () => {
                 {CATEGORY_LABELS && (
                   <div>
                     <Label className="mb-1 block">Категория</Label>
-                    <Select value={category || 'all'} onValueChange={v => setCategory(v === 'all' ? undefined : v)}>
+                    <Select value={category || 'all'} onValueChange={v => { setCategory(v === 'all' ? undefined : v); setPage(1); }}>
                       <SelectTrigger>
                         <SelectValue placeholder="Все категории" />
                       </SelectTrigger>
@@ -167,7 +151,7 @@ const ItemsAdmin = () => {
                 )}
                 <div className="flex items-center justify-between">
                   <Label htmlFor="only-price-switch">Только с ценой</Label>
-                  <Switch id="only-price-switch" checked={onlyWithPrice} onCheckedChange={setOnlyWithPrice} />
+                  <Switch id="only-price-switch" checked={onlyWithPrice} onCheckedChange={checked => { setOnlyWithPrice(checked); setPage(1); }} />
                 </div>
                 <div className="space-y-2">
                   <Label className="block">Цена</Label>
@@ -176,7 +160,7 @@ const ItemsAdmin = () => {
                       <input
                         placeholder="От"
                         value={minPrice}
-                        onChange={(e) => setMinPrice(e.target.value)}
+                        onChange={(e) => { setMinPrice(e.target.value); setPage(1); }}
                         type="number"
                         min="0"
                         className="border rounded px-2 py-1 w-full"
@@ -186,7 +170,7 @@ const ItemsAdmin = () => {
                       <input
                         placeholder="До"
                         value={maxPrice}
-                        onChange={(e) => setMaxPrice(e.target.value)}
+                        onChange={(e) => { setMaxPrice(e.target.value); setPage(1); }}
                         type="number"
                         min="0"
                         className="border rounded px-2 py-1 w-full"

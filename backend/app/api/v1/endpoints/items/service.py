@@ -154,15 +154,15 @@ def list_items(db: Session, filters: dict, skip: int = 0, limit: int = 100, user
             )
         )
     if category := filters.get("category"):
-        query = query.filter(Item.category.ilike(f"%{category}%"))
+        query = query.filter(Item.category == category)
     if style := filters.get("style"):
         query = query.filter(Item.style.ilike(f"%{style}%"))
     if collection := filters.get("collection"):
         query = query.filter(Item.collection.ilike(f"%{collection}%"))
     if min_price := filters.get("min_price"):
-        query = query.filter(Item.price >= min_price)
+        query = query.filter(Item.price != None, Item.price >= min_price)
     if max_price := filters.get("max_price"):
-        query = query.filter(Item.price <= max_price)
+        query = query.filter(Item.price != None, Item.price <= max_price)
     if size := filters.get("size"):
         query = query.filter(Item.size.ilike(f"%{size}%"))
     if clothing_type := filters.get("clothing_type"):

@@ -315,6 +315,7 @@ def list_outfits(
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     sort_by: Optional[str] = None,
+    category: Optional[str] = None,
 ):
     query = db.query(Outfit)
 
@@ -338,6 +339,10 @@ def list_outfits(
 
     if style:
         query = query.filter(Outfit.style == style)
+
+    if category:
+        # Фильтруем только те образы, где есть хотя бы один OutfitItem с нужной категорией
+        query = query.join(Outfit.outfit_items).filter(OutfitItem.item_category == category)
 
     if sort_by == "newest":
         query = query.order_by(Outfit.created_at.desc())

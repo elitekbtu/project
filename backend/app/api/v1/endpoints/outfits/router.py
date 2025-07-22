@@ -38,12 +38,13 @@ def list_outfits(
     min_price: Optional[float] = Query(None),
     max_price: Optional[float] = Query(None),
     sort_by: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     user: Optional[User] = Depends(get_current_user_optional)
 ):
     from app.core.pagination import get_pagination
     skip, limit = get_pagination(page)
-    return service.list_outfits(db, user, skip, limit, q, style, min_price, max_price, sort_by)
+    return service.list_outfits(db, user, skip, limit, q, style, min_price, max_price, sort_by, category)
 
 
 @router.get("/favorites", response_model=List[OutfitOut])
