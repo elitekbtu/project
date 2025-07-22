@@ -17,12 +17,14 @@ router = APIRouter(prefix="/users", tags=["Users"])
 def list_users(
     request: Request,
     page: int = Query(1, ge=1),
+    q: str = Query(None, description="Поиск по email"),
+    role: str = Query(None, description="Фильтр по роли: admin, moderator, user, all"),
     db: Session = Depends(get_db),
     current_user = Depends(require_admin),
 ):
     from app.core.pagination import get_pagination
     skip, limit = get_pagination(page)
-    return service.list_users(db, skip, limit)
+    return service.list_users(db, skip, limit, q, role)
 
 
 @router.get("/moderators", response_model=List[dict])

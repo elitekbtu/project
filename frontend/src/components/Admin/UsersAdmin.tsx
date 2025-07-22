@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Loader2, PlusCircle, Pencil, Trash2, Shield, UserCheck, UserX, Star } from 'lucide-react'
+import { Loader2, PlusCircle, Pencil, Trash2, Shield, UserCheck, UserX, Star, Filter } from 'lucide-react'
 import api from '../../api/client'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
@@ -10,6 +10,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '.
 import { Switch } from '../../components/ui/switch'
 import { Popover, PopoverTrigger, PopoverContent } from '../../components/ui/popover'
 import { Label } from '../../components/ui/label'
+import { Input } from '../../components/ui/input'
 
 interface User {
   id: number
@@ -30,21 +31,7 @@ const UsersAdmin = () => {
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const { toast } = useToast()
   const [role, setRole] = useState<string | undefined>(undefined)
-  const [onlyActive, setOnlyActive] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
-
-  const filterUsers = (data: User[]) => {
-    let filtered = data
-    if (role && role !== 'all') {
-      if (role === 'admin') filtered = filtered.filter(u => u.is_admin)
-      else if (role === 'moderator') filtered = filtered.filter(u => u.is_moderator && !u.is_admin)
-      else if (role === 'user') filtered = filtered.filter(u => !u.is_admin && !u.is_moderator)
-    }
-    if (onlyActive) {
-      filtered = filtered.filter(u => u.is_active)
-    }
-    return filtered
-  }
 
   const fetchUsers = async (pageToLoad = 1, append = false, q?: string) => {
     try {
@@ -52,10 +39,10 @@ const UsersAdmin = () => {
       else setLoading(true)
       const params: any = { page: pageToLoad }
       if (q) params.q = q
+      if (role && role !== 'all') params.role = role
       const resp = await api.get<User[]>('/api/users/', { params })
-      const filtered = filterUsers(resp.data)
-      setUsers(prev => append ? [...prev, ...filtered] : filtered)
-      setHasMore(filtered.length === 20)
+      setUsers(prev => append ? [...prev, ...resp.data] : resp.data)
+      setHasMore(resp.data.length === 20)
     } catch (err) {
       toast({
         variant: 'destructive',
@@ -68,10 +55,19 @@ const UsersAdmin = () => {
     }
   }
 
+  // useEffect для поиска
   useEffect(() => {
     setPage(1)
     fetchUsers(1, false, searchQuery)
   }, [searchQuery])
+
+  // useEffect для фильтра по роли
+  useEffect(() => {
+    setPage(1)
+    setUsers([])
+    setHasMore(true)
+    fetchUsers(1, false, searchQuery)
+  }, [role])
 
   useEffect(() => {
     if (page === 1) return
@@ -109,6 +105,13 @@ const UsersAdmin = () => {
     }
   }
 
+  const handleResetFilters = () => {
+    setRole(undefined)
+  }
+
+  // Состояние для popover фильтра
+  const [filterOpen, setFilterOpen] = useState(false)
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -126,44 +129,54 @@ const UsersAdmin = () => {
     >
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Управление пользователями</h1>
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Поиск по email..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="border rounded px-2 py-1"
-          />
-          <Button type="submit">Поиск</Button>
-        </form>
-        <div className="flex gap-2">
-          <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline">Фильтры</Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64">
-              <div className="flex flex-col gap-4">
-                <div>
-                  <Label className="mb-1 block">Роль</Label>
-                  <Select value={role || 'all'} onValueChange={v => setRole(v === 'all' ? undefined : v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Все роли" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Все роли</SelectItem>
-                      <SelectItem value="admin">Админ</SelectItem>
-                      <SelectItem value="moderator">Модератор</SelectItem>
-                      <SelectItem value="user">Пользователь</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="only-active-switch">Только активные</Label>
-                  <Switch id="only-active-switch" checked={onlyActive} onCheckedChange={setOnlyActive} />
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+        <div className="flex gap-2 items-center">
+          <form onSubmit={handleSearch} className="flex gap-2 items-center">
+            <Input
+              type="text"
+              placeholder="Поиск по email..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            <Button type="submit">Поиск</Button>
+            <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant={role ? 'default' : 'outline'}
+                  className="h-10 min-w-[44px] px-2 flex items-center justify-center"
+                  aria-label="Фильтры"
+                >
+                  <Filter className="h-5 w-5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                side="right"
+                className="p-2 rounded-lg shadow-md border w-[110px] min-w-[110px] bg-white dark:bg-gray-900 flex flex-col gap-2"
+                style={{ minWidth: '110px', maxWidth: '160px' }}
+              >
+                <Label className="mb-1 block text-xs text-muted-foreground">Роль</Label>
+                <Select value={role || 'all'} onValueChange={v => { setRole(v === 'all' ? undefined : v); setFilterOpen(false); }}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Все роли" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Все</SelectItem>
+                    <SelectItem value="admin">Админ</SelectItem>
+                    <SelectItem value="moderator">Модер.</SelectItem>
+                    <SelectItem value="user">Польз.</SelectItem>
+                  </SelectContent>
+                </Select>
+                <button
+                  className="text-[11px] text-muted-foreground hover:text-primary transition self-end mt-1"
+                  type="button"
+                  onClick={() => { handleResetFilters(); setFilterOpen(false); }}
+                >
+                  Сбросить
+                </button>
+              </PopoverContent>
+            </Popover>
+          </form>
           <Button asChild>
             <Link to="/admin/users/new" className="flex items-center gap-2">
               <PlusCircle className="h-4 w-4" />
@@ -172,6 +185,8 @@ const UsersAdmin = () => {
           </Button>
         </div>
       </div>
+
+      {/* Убрали статичный popover фильтров */}
 
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
         <table className="min-w-full text-left">

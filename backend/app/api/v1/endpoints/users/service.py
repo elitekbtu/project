@@ -9,8 +9,18 @@ from app.db.models.item import Item
 from .schemas import UserCreateAdmin, UserUpdateAdmin
 
 
-def list_users(db: Session, skip: int = 0, limit: int = 20) -> List[User]:
-    return db.query(User).offset(skip).limit(limit).all()
+def list_users(db: Session, skip: int = 0, limit: int = 20, q: str = None, role: str = None) -> List[User]:
+    query = db.query(User)
+    if q:
+        query = query.filter(User.email.ilike(f"%{q}%"))
+    if role and role != 'all':
+        if role == 'admin':
+            query = query.filter(User.is_admin == True)
+        elif role == 'moderator':
+            query = query.filter(User.is_moderator == True, User.is_admin == False)
+        elif role == 'user':
+            query = query.filter(User.is_admin == False, User.is_moderator == False)
+    return query.offset(skip).limit(limit).all()
 
 
 def get_user(db: Session, user_id: int) -> User:

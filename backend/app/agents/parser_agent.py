@@ -228,22 +228,7 @@ class EnhancedLamodaParser:
             
             # Скачиваем изображения для всех найденных товаров
             enhanced_products = []
-            for pro if product.image_url or product.image_urls:
-                    # Скачиваем изображения
-                    product_dict = {
-                        'sku': product.sku,
-                        'image_url': product.image_url,
-                        'image_urls': product.image_urls
-                    }
-                    
-                    downloaded_data = await self._download_product_images(product_dict)
-                    
-                    # Обновляем продукт с локальными путями
-                    product.image_url = downloaded_data.get('image_url', product.image_url)
-                    product.image_urls = downloaded_data.get('image_urls', product.image_urls)
-                
-                enhanced_products.append(product)
-            duct in products:
+            for product in products:
                 if product.image_url or product.image_urls:
                     # Скачиваем изображения
                     product_dict = {
