@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import ItemImage from './ItemImage'
 
 interface ImageCarouselProps {
   images: string[]
@@ -38,9 +39,8 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, className = '', a
       /* Wrapper for correct aspect ratio */
     }
       <AnimatePresence custom={direction} initial={false}>
-        <motion.img
+        <motion.div
           key={imageIndex}
-          src={processedImages[imageIndex]}
           custom={direction}
           variants={variants}
           initial="enter"
@@ -59,7 +59,15 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, className = '', a
             }
           }}
           className="h-full w-full object-contain select-none"
-        />
+        >
+          <ItemImage
+            src={processedImages[imageIndex]}
+            alt={`Изображение ${imageIndex + 1}`}
+            className="h-full w-full object-contain select-none"
+            width={200}
+            height={200}
+          />
+        </motion.div>
       </AnimatePresence>
       {/* Pagination Dots */}
       {images.length > 1 && (

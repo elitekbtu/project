@@ -27,15 +27,20 @@
     <meta name="msapplication-TileColor" content="#000000" />
     <meta name="msapplication-TileImage" content="/logo.png" />
     
-    <!-- Fonts -->
+    <!-- Fonts: preconnect + display=swap + preload -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-QwqJSU89.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    </noscript>
+    <!-- Критический CSS: preload -->
+    <noscript></noscript>
+    <script type="module" crossorigin src="/assets/index-g8rDvjNt.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/vendor-BtP0CW_r.js">
     <link rel="modulepreload" crossorigin href="/assets/router-BaKb0mPD.js">
     <link rel="modulepreload" crossorigin href="/assets/ui-9Jqw0cF7.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-DSkRhJuH.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-CJct1FyR.css">
   <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
   <body>
     <div id="root"></div>
@@ -49,6 +54,7 @@
     </script>
 
     <!-- PWA Installation Script -->
+    <script defer src="/registerSW.js"></script>
     <script>
       // Инициализация PWA
       if ('serviceWorker' in navigator) {

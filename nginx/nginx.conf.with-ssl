@@ -113,6 +113,12 @@ http {
             add_header Cache-Control "public, immutable" always;
         }
 
+        # Cache webp images for 1 year
+        location ~* \.webp$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable" always;
+        }
+
         # Service Worker
         location = /sw.js {
             add_header Cache-Control "no-cache, no-store, must-revalidate" always;
