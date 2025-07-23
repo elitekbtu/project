@@ -1,12 +1,17 @@
 import api from './client'
 import { type CartItemOut, type CartStateOut } from './schemas'
+import { getStoredTokens } from './client'
 
 export const listCartItems = async () => {
+  const { access } = getStoredTokens();
+  if (!access) return [];
   const resp = await api.get<CartItemOut[]>('/api/cart/')
   return resp.data
 }
 
 export const getCartState = async () => {
+  const { access } = getStoredTokens();
+  if (!access) return { items: [] };
   const resp = await api.get<CartStateOut>('/api/cart/')
   return resp.data
 }

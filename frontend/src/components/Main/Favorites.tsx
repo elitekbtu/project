@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { Card, CardContent } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { ShoppingBag, Heart as HeartIcon } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 
 interface Item {
   id: number
@@ -25,6 +26,7 @@ interface Outfit {
 }
 
 const Favorites = () => {
+  const { user } = useAuth();
   const [items, setItems] = useState<Item[]>([])
   const [outfits, setOutfits] = useState<Outfit[]>([])
   const [loading, setLoading] = useState(true)
@@ -34,6 +36,7 @@ const Favorites = () => {
   const [outfitsHasMore, setOutfitsHasMore] = useState(true)
 
   const fetchItems = async (page: number, append = false) => {
+    if (!user) return;
     try {
       const data = await listFavoriteItems(page)
       setItems(prev => append ? [...prev, ...data] : data)
@@ -44,6 +47,7 @@ const Favorites = () => {
   }
 
   const fetchOutfits = async (page: number, append = false) => {
+    if (!user) return;
     try {
       const data = await listFavoriteOutfits(page)
       setOutfits(prev => append ? [...prev, ...data] : data)

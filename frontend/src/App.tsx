@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { CartProvider } from './context/CartContext'
 import { FavoritesProvider } from './context/FavoritesContext'
 import { initializePWA } from './utils/pwa'
+import { AuthProvider, useAuth } from './context/AuthContext'
 // Layouts
 import GuestLayout from './layouts/GuestLayout'
 import MainLayout from './layouts/MainLayout'
@@ -43,12 +44,9 @@ import ShopsList from './components/Main/Shops/ShopsList'
 import ShopItemsList from './components/Main/Shops/ShopItemsList'
 import ShopItemDetail from './components/Main/Shops/ShopItemDetail'
 
-function App() {
-  // Инициализация PWA
-  useEffect(() => {
-    initializePWA();
-  }, []);
-
+function AppContent() {
+  const { loading } = useAuth();
+  if (loading) return null;
   return (
     <CartProvider>
       <FavoritesProvider>
@@ -102,7 +100,18 @@ function App() {
         </BrowserRouter>
       </FavoritesProvider>
     </CartProvider>
-  )
+  );
+}
+
+function App() {
+  useEffect(() => {
+    initializePWA();
+  }, []);
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
 }
 
 export default App

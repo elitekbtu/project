@@ -12,7 +12,7 @@ class ProfileOut(BaseModel):
     avatar: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    phone_number: Optional[constr(regex=PHONE_REGEX)] = None
+    phone_number: Optional[constr(pattern=PHONE_REGEX)] = None
     date_of_birth: Optional[date] = None
     height: Optional[float] = None
     weight: Optional[float] = None
@@ -25,7 +25,7 @@ class ProfileOut(BaseModel):
     is_moderator: bool = False
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
     # Accept values coming from DB as comma-separated strings and convert to lists
     @validator("favorite_colors", "favorite_brands", pre=True)

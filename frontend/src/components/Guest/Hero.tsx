@@ -10,11 +10,11 @@ const Hero = () => {
   const bgControls = useAnimation()
   
   const partners = [
-    { name: "MEGA", logo: "https://mega.kz/media/2021/10/1/1633104265.png" },
-    { name: "Almaly", logo: "https://almaly.kz/upload/iblock/12f/up7f.jpg" },
-    { name: "Dostyk Plaza", logo: "https://dostykplaza.kz/local/templates/slonworks/img/svg/logo-dp-upd.svg" },
-    { name: "GOOD", logo: "https://good.kz/wp-content/uploads/2024/01/7-1-1.webp" },
-    { name: "Forum", logo: "https://forum-api.interattiva.kz//%2Fstorage%2Fuploads%2F2019%2F11%2F24%2F5dda4727ebab6logo_noshadow-01.svg" },
+    { name: "MEGA", logo: "/external_image_1.png" },
+    { name: "Almaly", logo: "/external_image_2.jpg" },
+    { name: "Dostyk Plaza", logo: "/external_image_3.svg" },
+    { name: "GOOD", logo: "/external_image_4.webp" },
+    { name: "Forum", logo: "/external_image_5.svg" },
   ]
 
   const [ref, inView] = useInView({
@@ -230,15 +230,15 @@ const Hero = () => {
             {[
               { 
                 name: "Женская одежда", 
-                image: "https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg?auto=compress&cs=tinysrgb&w=800"
+                image: "/external_image_6.jpeg"
               },
               { 
                 name: "Мужская одежда", 
-                image: "https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg?auto=compress&cs=tinysrgb&w=800"
+                image: "/external_image_7.jpeg"
               },
               { 
                 name: "Аксессуары", 
-                image: "https://images.pexels.com/photos/1927259/pexels-photo-1927259.jpeg?auto=compress&cs=tinysrgb&w=800"
+                image: "/external_image_8.jpeg"
               }
             ].map((category, index) => (
               <motion.div

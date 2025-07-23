@@ -10,6 +10,7 @@ import { useToast } from '../../ui/use-toast'
 import { createOutfit } from '../../../api/outfits'
 import { useNavigate } from 'react-router-dom'
 import ItemImage from '../../common/ItemImage'
+import { useAuth } from '../../../context/AuthContext'
 
 // Новая конфигурация для 5 категорий образа
 export const categoryConfig = [
@@ -47,6 +48,7 @@ interface IndexState {
 }
 
 const OutfitBuilder = () => {
+  const { user } = useAuth();
   const [itemsByCat, setItemsByCat] = useState<Record<string, ItemOut[]>>({})
   const [indexByCat, setIndexByCat] = useState<IndexState>({})
   const [selectedByCat, setSelectedByCat] = useState<Record<string, ItemOut[]>>({})
@@ -92,17 +94,19 @@ const OutfitBuilder = () => {
         setSelectedByCat(sel)
 
         // Fetch favorite items details once
-        try {
-          const fav = await listFavoriteItems()
-          const favGrouped: Record<string, ItemOut[]> = {}
-          categoryConfig.forEach((c) => (favGrouped[c.key] = []))
-          fav.forEach((item) => {
-            const catConf = categoryConfig.find((c) => c.apiTypes.some((t) => t === (item.category || '')))
-            if (catConf) favGrouped[catConf.key].push(item)
-          })
-          setFavItemsByCat(favGrouped)
-        } catch (err) {
-          // ignore
+        if (user) {
+          try {
+            const fav = await listFavoriteItems()
+            const favGrouped: Record<string, ItemOut[]> = {}
+            categoryConfig.forEach((c) => (favGrouped[c.key] = []))
+            fav.forEach((item) => {
+              const catConf = categoryConfig.find((c) => c.apiTypes.some((t) => t === (item.category || '')))
+              if (catConf) favGrouped[catConf.key].push(item)
+            })
+            setFavItemsByCat(favGrouped)
+          } catch (err) {
+            // ignore
+          }
         }
       } catch (err) {
         // eslint-disable-next-line no-console

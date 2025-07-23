@@ -11,7 +11,7 @@ class OutfitItemBase(BaseModel):
     price: Optional[float] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class OutfitCreate(BaseModel):
@@ -54,7 +54,7 @@ class OutfitOut(BaseModel):
     tryon_image_url: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class OutfitCommentCreate(BaseModel):
@@ -69,7 +69,7 @@ class OutfitCommentOut(OutfitCommentCreate):
     likes: Optional[int] = 0
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class VirtualTryOnRequest(BaseModel):

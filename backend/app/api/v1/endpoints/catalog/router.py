@@ -46,7 +46,7 @@ class ParseRequest(BaseModel):
     """Модель запроса парсинга"""
     query: str = Field(..., description="Поисковый запрос", min_length=1, max_length=100)
     limit: int = Field(20, description="Количество товаров для парсинга", ge=1, le=100)
-    domain: str = Field("kz", description="Домен для парсинга", regex="^(ru|kz|by)$")
+    domain: str = Field("kz", description="Домен для парсинга", pattern="^(ru|kz|by)$")
 
 class TaskStatus(BaseModel):
     """Модель статуса задачи"""
@@ -334,7 +334,7 @@ async def simple_parse_only(
     request: Request,
     query: str = Query(..., description="Поисковый запрос"),
     limit: int = Query(10, description="Количество товаров", ge=1, le=50),
-    domain: str = Query("kz", description="Домен", regex="^(ru|kz|by)$")
+    domain: str = Query("kz", description="Домен", pattern="^(ru|kz|by)$")
 ):
     """
     Простой парсинг без импорта в БД
@@ -475,7 +475,7 @@ async def test_parser_no_auth(
     request: Request,
     query: str = Query("jeans", description="Поисковый запрос"),
     limit: int = Query(5, description="Количество товаров", ge=1, le=10),
-    domain: str = Query("kz", description="Домен", regex="^(ru|kz|by)$")
+    domain: str = Query("kz", description="Домен", pattern="^(ru|kz|by)$")
 ):
     """
     ВРЕМЕННЫЙ тестовый эндпоинт парсера без аутентификации

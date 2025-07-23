@@ -1,25 +1,6 @@
 services:
-  nginx:
-    build: ./nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - frontend
-      - backend
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - frontend_dist:/usr/share/nginx/html:ro
-      - ./certbot/conf:/etc/letsencrypt:ro
-      - ./certbot/www:/var/www/certbot:ro
-
   frontend:
     build: ./frontend
-    restart: unless-stopped
-    volumes:
-      - frontend_dist:/app/dist
-
   backend:
     build: ./backend
     restart: unless-stopped
@@ -91,13 +72,12 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_started
-
   db:
     image: postgres:14
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -146,7 +126,19 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
+  nginx:
+    build: ./nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - frontend
+      - backend
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
   certbot:
     image: certbot/certbot:latest
     container_name: certbot
@@ -158,4 +150,3 @@ services:
 volumes:
   postgres_data:
   rabbitmq_data:
-  frontend_dist:

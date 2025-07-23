@@ -57,7 +57,7 @@ class VariantOut(VariantBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ItemOut(ItemCreate):
@@ -71,7 +71,7 @@ class ItemOut(ItemCreate):
     is_favorite: Optional[bool] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class CommentCreate(BaseModel):
@@ -87,7 +87,7 @@ class CommentOut(CommentCreate):
     likes: Optional[int] = 0
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Images
@@ -99,4 +99,4 @@ class ItemImageOut(BaseModel):
     position: Optional[int] = None
 
     class Config:
-        orm_mode = True 
+        from_attributes = True 

@@ -81,7 +81,6 @@ const About = () => {
     setIsSubmitting(true)
     
     setTimeout(() => {
-      console.log('Форма отправлена:', formData)
       alert('Спасибо! Ваше сообщение успешно отправлено. Мы ответим вам в ближайшее время.')
       setFormData({
         name: '',

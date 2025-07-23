@@ -51,10 +51,8 @@
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('/sw.js')
             .then(function(registration) {
-              console.log('SW registered: ', registration);
             })
             .catch(function(registrationError) {
-              console.log('SW registration failed: ', registrationError);
             });
         });
       }
@@ -74,7 +72,6 @@
 
       // Обработчик успешной установки
       window.addEventListener('appinstalled', () => {
-        console.log('PWA was installed');
         deferredPrompt = null;
         
         // Скрываем кнопку установки
@@ -90,9 +87,7 @@
           deferredPrompt.prompt();
           deferredPrompt.userChoice.then((choiceResult) => {
             if (choiceResult.outcome === 'accepted') {
-              console.log('User accepted the install prompt');
             } else {
-              console.log('User dismissed the install prompt');
             }
             deferredPrompt = null;
           });

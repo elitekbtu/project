@@ -10,7 +10,6 @@ cleanupOutdatedCaches()
 if (self.__WB_MANIFEST && Array.isArray(self.__WB_MANIFEST)) {
   precacheAndRoute(self.__WB_MANIFEST)
 } else {
-  console.warn('Service Worker: __WB_MANIFEST is not available or not an array')
   // Fallback: precache basic resources
   precacheAndRoute([
     { url: '/', revision: '1' },

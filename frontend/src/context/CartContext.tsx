@@ -42,7 +42,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const init = async () => {
       if (user) {
-        // Fetch from backend
         try {
           const data = await getCartState()
           setItems(

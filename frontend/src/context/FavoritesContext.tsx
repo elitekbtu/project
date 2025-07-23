@@ -20,13 +20,12 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Load favorites when user changes (login/logout)
   useEffect(() => {
     const load = async () => {
-      setLoading(true)
       if (user) {
+        setLoading(true)
         try {
           const fav = await listFavoriteItems()
           setFavoriteIds(fav.map((i) => i.id))
         } catch (err) {
-          // Ignore 401 or other errors silently for guests
           setFavoriteIds([])
           console.error(err)
         } finally {

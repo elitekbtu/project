@@ -3,9 +3,7 @@ export const registerServiceWorker = async (): Promise<void> => {
   if ('serviceWorker' in navigator) {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('SW registered: ', registration);
     } catch (registrationError) {
-      console.log('SW registration failed: ', registrationError);
     }
   }
 };
@@ -19,7 +17,6 @@ export const isPWAInstalled = (): boolean => {
 // Запрос разрешения на push уведомления
 export const requestNotificationPermission = async (): Promise<boolean> => {
   if (!('Notification' in window)) {
-    console.log('This browser does not support notifications');
     return false;
   }
 
@@ -28,7 +25,6 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
   }
 
   if (Notification.permission === 'denied') {
-    console.log('Notification permission denied');
     return false;
   }
 
@@ -43,9 +39,7 @@ export const showInstallPrompt = (): void => {
     installPrompt.prompt();
     installPrompt.userChoice.then((choiceResult: any) => {
       if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the install prompt');
       } else {
-        console.log('User dismissed the install prompt');
       }
       (window as any).deferredPrompt = null;
     });
@@ -72,7 +66,6 @@ export const initializePWA = (): void => {
 
   // Обработчик успешной установки
   window.addEventListener('appinstalled', () => {
-    console.log('PWA was installed');
     (window as any).deferredPrompt = null;
     
     // Скрываем кнопку установки
@@ -93,6 +86,5 @@ export const checkPWASupport = () => {
     standalone: window.matchMedia('(display-mode: standalone)').matches
   };
 
-  console.log('PWA Support:', support);
   return support;
 }; 

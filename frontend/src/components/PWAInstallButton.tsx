@@ -59,10 +59,8 @@ const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
       installPrompt.prompt();
       installPrompt.userChoice.then((choiceResult: any) => {
         if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the install prompt');
           setShowInstallButton(false);
         } else {
-          console.log('User dismissed the install prompt');
         }
         (window as any).deferredPrompt = null;
       });

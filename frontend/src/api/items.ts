@@ -9,6 +9,7 @@ import {
   type VariantCreate,
   type VariantUpdate,
 } from './schemas'
+import { getStoredTokens } from './client'
 
 export interface ListItemsParams {
   page?: number
@@ -70,6 +71,8 @@ export const toggleFavoriteItem = async (id: number) => {
 }
 
 export const listFavoriteItems = async (page = 1) => {
+  const { access } = getStoredTokens();
+  if (!access) return [];
   const resp = await api.get<ItemOut[]>('/api/items/favorites', { params: { page } })
   return resp.data
 }
