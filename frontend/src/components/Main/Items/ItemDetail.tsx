@@ -192,8 +192,6 @@ const ItemDetail = () => {
                 alt={item.name}
                 className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                 fallbackClassName="flex aspect-square items-center justify-center rounded-xl bg-muted shadow-sm"
-                width={400}
-                height={400}
               />
             </div>
           )}

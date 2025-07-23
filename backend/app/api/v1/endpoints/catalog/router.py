@@ -20,9 +20,6 @@ import asyncio
 from urllib.parse import unquote
 import logging
 from sqlalchemy.orm import Session
-from io import BytesIO
-from PIL import Image
-import os
 
 from app.core.security import require_admin, get_current_user
 from app.core.rate_limiting import limiter, RATE_LIMITS
@@ -681,85 +678,3 @@ async def parse_catalog(
     finally:
         if 'parser' in locals():
             await parser.close() 
-
-@router.get("/image-resize")
-@limiter.limit(RATE_LIMITS["api"])
-async def image_resize(
-    request: Request,
-    url: str = Query(..., description="URL исходного изображения"),
-    w: int = Query(..., description="Ширина, px", ge=1, le=2000),
-    h: int = Query(..., description="Высота, px", ge=1, le=2000),
-    format: str = Query("webp", description="Формат: webp, jpeg, png")
-):
-    """
-    Ресайз и конвертация изображений для оптимизации загрузки на фронте.
-    """
-    try:
-        img_bytes = None
-        # Если локальный файл (относительный путь)
-        if url.startswith('/'):
-            static_dirs = [
-                '/app/frontend/public',
-                '/app/nginx/html',
-            ]
-            file_found = False
-            for static_dir in static_dirs:
-                file_path = os.path.join(static_dir, url.lstrip('/'))
-                if os.path.isfile(file_path):
-                    with open(file_path, 'rb') as f:
-                        img_bytes = f.read()
-                    file_found = True
-                    break
-            if not file_found:
-                logger.warning(f'Local file not found: {url}')
-                return await generate_placeholder_image('Not found')
-        else:
-            # Скачиваем по http/https
-            async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
-                resp = await client.get(url)
-                if resp.status_code != 200:
-                    logger.warning(f"Image unavailable for resize {url}: {resp.status_code}")
-                    return await generate_placeholder_image(f"Error {resp.status_code}")
-                img_bytes = resp.content
-
-        # Открываем изображение через Pillow
-        try:
-            img = Image.open(BytesIO(img_bytes))
-        except Exception as e:
-            logger.warning(f"Pillow open error: {e}")
-            return await generate_placeholder_image("Invalid image")
-
-        # Ресайз с сохранением пропорций (вписываем в w x h)
-        img = img.convert("RGBA") if format.lower() == "webp" else img.convert("RGB")
-        img.thumbnail((w, h), Image.LANCZOS)
-
-        # Сохраняем в нужный формат
-        output = BytesIO()
-        fmt = format.upper()
-        if fmt == "JPG":
-            fmt = "JPEG"
-        if fmt not in ("WEBP", "JPEG", "PNG"):
-            fmt = "WEBP"
-        img.save(output, fmt, quality=85, optimize=True)
-        output.seek(0)
-
-        # Content-Type
-        content_type = {
-            "WEBP": "image/webp",
-            "JPEG": "image/jpeg",
-            "PNG": "image/png"
-        }.get(fmt, "image/webp")
-
-        return StreamingResponse(
-            output,
-            media_type=content_type,
-            headers={
-                'Cache-Control': 'public, max-age=86400',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET',
-                'Access-Control-Allow-Headers': '*'
-            }
-        )
-    except Exception as e:
-        logger.warning(f"Error in image-resize: {e}")
-        return await generate_placeholder_image("Resize error") 

@@ -5,17 +5,16 @@ import { Button } from '../ui/button'
 import { useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
 import PWAInstallButton from '../PWAInstallButton'
-import ItemImage from '../common/ItemImage'
 
 const Hero = () => {
   const bgControls = useAnimation()
   
   const partners = [
-    { name: "MEGA", logo: "/external_image_1.png", isSvg: false },
-    { name: "Almaly", logo: "/external_image_2.jpg", isSvg: false },
-    { name: "Dostyk Plaza", logo: "/external_image_3.svg", isSvg: true },
-    { name: "GOOD", logo: "/external_image_4.webp", isSvg: false },
-    { name: "Forum", logo: "/external_image_5.svg", isSvg: true },
+    { name: "MEGA", logo: "/external_image_1.png" },
+    { name: "Almaly", logo: "/external_image_2.jpg" },
+    { name: "Dostyk Plaza", logo: "/external_image_3.svg" },
+    { name: "GOOD", logo: "/external_image_4.webp" },
+    { name: "Forum", logo: "/external_image_5.svg" },
   ]
 
   const [ref, inView] = useInView({
@@ -207,24 +206,12 @@ const Hero = () => {
                     className="flex-shrink-0 bg-background/80 backdrop-blur-sm px-4 md:px-6 py-2 md:py-3 rounded-lg border border-muted/20 hover:border-primary/30 transition-colors"
                     whileHover={{ scale: 1.05 }}
                   >
-                    {partner.isSvg ? (
-                      <img
-                        src={partner.logo}
-                        alt={partner.name}
-                        className="h-12 md:h-16 w-auto object-contain"
-                        loading="lazy"
-                        width={64}
-                        height={64}
-                      />
-                    ) : (
-                      <ItemImage
-                        src={partner.logo}
-                        alt={partner.name}
-                        className="h-12 md:h-16 w-auto object-contain"
-                        width={64}
-                        height={64}
-                      />
-                    )}
+                    <img
+                      src={partner.logo}
+                      alt={partner.name}
+                      className="h-12 md:h-16 w-auto object-contain"
+                      loading="lazy"
+                    />
                   </motion.div>
                 ))}
               </motion.div>
@@ -263,12 +250,11 @@ const Hero = () => {
                 whileHover={{ y: -8 }}
               >
                 <div className="aspect-[4/5] overflow-hidden">
-                  <ItemImage
+                  <img
                     src={category.image}
                     alt={category.name}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    width={400}
-                    height={500}
+                    loading="lazy"
                   />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
