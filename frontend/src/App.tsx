@@ -46,7 +46,34 @@ const ShopItemDetail = lazy(() => import('./components/Main/Shops/ShopItemDetail
 
 function AppContent() {
   const { loading } = useAuth();
-  if (loading) return null;
+  if (loading) return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'column',
+      background: '#fff',
+      zIndex: 9999
+    }}>
+      <div style={{
+        width: 48,
+        height: 48,
+        border: '6px solid #e0e0e0',
+        borderTop: '6px solid #3b82f6',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+        marginBottom: 24
+      }} />
+      <div style={{ fontSize: 20, color: '#3b82f6', fontWeight: 500 }}>Загрузка...</div>
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
   return (
     <CartProvider>
       <FavoritesProvider>
