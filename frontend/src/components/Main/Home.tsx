@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import { useEffect, useState } from 'react'
 import api from '../../api/client'
@@ -38,28 +37,12 @@ const Home = () => {
     fetchTrending()
   }, [])
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  }
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Welcome Section */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+      <section
         className="mb-12 text-center"
       >
         <div className="mx-auto max-w-3xl">
@@ -70,13 +53,10 @@ const Home = () => {
             Откройте для себя новые тренды и создайте уникальные образы
           </p>
         </div>
-      </motion.section>
+      </section>
 
       {/* Quick Actions */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
+      <section
         className="mb-12"
       >
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-4 md:grid-cols-4">
@@ -120,14 +100,11 @@ const Home = () => {
             </Link>
           ))}
         </div>
-      </motion.section>
+      </section>
 
       {/* Trending Items */}
       {!loading && trending.length > 0 && (
-        <motion.section
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
+        <section
           className="mb-12"
         >
           <div className="mb-8 flex items-center justify-between">
@@ -139,10 +116,9 @@ const Home = () => {
               <Link to="/items">Смотреть все</Link>
             </Button>
           </div>
-          
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
             {trending.slice(0, 8).map((item, index) => (
-              <motion.div key={item.id} variants={itemVariants}>
+              <div key={item.id}>
                 <Card className="group overflow-hidden transition-all hover:shadow-lg">
                   <Link to={`/items/${item.id}`}>
                     <div className="relative aspect-square md:aspect-[3/4] overflow-hidden">
@@ -178,18 +154,15 @@ const Home = () => {
                     </CardContent>
                   </Link>
                 </Card>
-              </motion.div>
+              </div>
             ))}
           </div>
-        </motion.section>
+        </section>
       )}
 
       {/* Empty State */}
       {!loading && trending.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6 }}
+        <div
           className="py-12 text-center"
         >
           <ShoppingBag className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
@@ -197,7 +170,7 @@ const Home = () => {
           <p className="text-muted-foreground">
             Начните добавлять товары в избранное, чтобы увидеть тренды
           </p>
-        </motion.div>
+        </div>
       )}
     </div>
   )

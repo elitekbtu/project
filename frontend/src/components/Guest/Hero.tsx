@@ -54,89 +54,39 @@ const Hero = () => {
   return (
     <div className="relative overflow-hidden">
       {/* Анимированные элементы фона */}
-      <motion.div
-        className="absolute top-1/3 left-1/4 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none"
-        animate={{
-          x: [0, 50, 0],
-          y: [0, 30, 0],
-          scale: [1, 1.2, 1]
-        }}
-        transition={{
-          duration: 15,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
-      
-      <motion.div
-        className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-accent/10 blur-3xl pointer-events-none"
-        animate={{
-          x: [0, -40, 0],
-          y: [0, -20, 0],
-          rotate: [0, 10, 0]
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
+      <div className="absolute top-1/3 left-1/4 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
 
       <div className="relative z-10 container mx-auto px-4 py-16 md:py-24 lg:py-32">
         <div className="mx-auto max-w-4xl text-center">
           {/* Бейдж */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="mb-6 inline-block relative z-10"
-          >
+          <div className="mb-6 inline-block relative z-10">
             <div className="inline-flex items-center gap-2 rounded-full bg-muted/50 px-4 py-2 text-sm font-medium text-muted-foreground backdrop-blur-sm border border-muted/30 shadow-sm hover:bg-muted/70 transition-colors cursor-default select-none">
               <span>Новая коллекция уже здесь</span>
               <ChevronRight className="h-4 w-4" />
             </div>
-          </motion.div>
+          </div>
 
           {/* Заголовок */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="mb-6 font-display text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl"
-          >
+          <h1 className="mb-6 font-display text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
             <span className="block">Стиль, который</span>
             <span className="relative inline-block mt-2">
               <span className="relative z-10 bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
                 говорит
               </span>
-              <motion.span 
-                className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary/0"
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ duration: 1.2, delay: 0.8 }}
-              />
+              <span className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary/0" />
             </span>
             <span className="block mt-2">за вас</span>
-          </motion.h1>
+          </h1>
 
           {/* Подзаголовок */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground leading-relaxed"
-          >
+          <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground leading-relaxed">
             Откройте для себя уникальные образы и создайте свой неповторимый стиль. 
             Качественная одежда для тех, кто ценит индивидуальность и комфорт.
-          </motion.p>
+          </p>
 
           {/* Кнопки */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="relative z-10 flex flex-col gap-4 sm:flex-row sm:justify-center"
-          >
+          <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:justify-center">
             <Button asChild size="lg" className="group shadow-lg hover:shadow-primary/20 min-h-[48px] touch-manipulation">
               <Link to="/register">
                 <span className="flex items-center">
@@ -154,21 +104,16 @@ const Hero = () => {
                 </span>
               </Link>
             </Button>
-          </motion.div>
+          </div>
 
           {/* Кнопка установки PWA */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.7 }}
-            className="relative z-10 mt-6 flex justify-center"
-          >
+          <div className="relative z-10 mt-6 flex justify-center">
             <PWAInstallButton 
               variant="ghost" 
               size="sm" 
               className="text-muted-foreground hover:text-foreground min-h-[44px] touch-manipulation"
             />
-          </motion.div>
+          </div>
 
           {/* Карусель логотипов партнёров */}
           <div ref={ref} className="mt-10">
@@ -221,12 +166,7 @@ const Hero = () => {
 
         {/* Категории (только на десктопе) */}
         <div className="hidden md:block mt-20">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-6"
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
               { 
                 name: "Женская одежда", 
@@ -240,14 +180,10 @@ const Hero = () => {
                 name: "Аксессуары", 
                 image: "/external_image_8.jpeg"
               }
-            ].map((category, index) => (
-              <motion.div
+            ].map((category) => (
+              <div
                 key={category.name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.6 + index * 0.1 }}
                 className="group relative overflow-hidden rounded-2xl bg-card border border-muted/20 hover:border-primary/20 transition-colors shadow-lg hover:shadow-xl"
-                whileHover={{ y: -8 }}
               >
                 <div className="aspect-[4/5] overflow-hidden">
                   <img
@@ -263,9 +199,9 @@ const Hero = () => {
                     {category.name}
                   </h3>
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </div>
     </div>

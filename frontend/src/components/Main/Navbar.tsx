@@ -12,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
-import { motion } from 'framer-motion'
 
 const MainNavbar = () => {
   const { user, isAdmin, isModerator } = useAuth()
@@ -23,22 +22,14 @@ const MainNavbar = () => {
   const isActive = (path: string) => location.pathname.startsWith(path)
   
   return (
-    <motion.header 
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md shadow-sm"
-    >
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
+        <div>
           <Link to="/home" className="flex items-center gap-2 font-display text-xl font-bold tracking-tight hover:text-primary transition-colors">
             <ShoppingBag className="h-6 w-6" />
             TRC
           </Link>
-        </motion.div>
+        </div>
         
         {/* Desktop nav */}
         <nav className="hidden gap-8 md:flex">
@@ -49,14 +40,7 @@ const MainNavbar = () => {
             }`}
           >
             Главная
-            {isActive('/home') && (
-              <motion.div
-                layoutId="activeTab"
-                className="absolute -bottom-2 left-0 right-0 h-0.5 bg-primary rounded-full"
-                initial={false}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            )}
+            {/* underline removed */}
           </Link>
           <Link 
             to="/items" 
@@ -65,14 +49,7 @@ const MainNavbar = () => {
             }`}
           >
             Каталог
-            {isActive('/items') && (
-              <motion.div
-                layoutId="activeTab"
-                className="absolute -bottom-2 left-0 right-0 h-0.5 bg-primary rounded-full"
-                initial={false}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            )}
+            {/* underline removed */}
           </Link>
           <Link 
             to="/outfits" 
@@ -81,14 +58,7 @@ const MainNavbar = () => {
             }`}
           >
             Образы
-            {isActive('/outfits') && (
-              <motion.div
-                layoutId="activeTab"
-                className="absolute -bottom-2 left-0 right-0 h-0.5 bg-primary rounded-full"
-                initial={false}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            )}
+            {/* underline removed */}
           </Link>
           <Link 
             to="/shops" 
@@ -97,14 +67,7 @@ const MainNavbar = () => {
             }`}
           >
             Магазины
-            {isActive('/shops') && (
-              <motion.div
-                layoutId="activeTab"
-                className="absolute -bottom-2 left-0 right-0 h-0.5 bg-primary rounded-full"
-                initial={false}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            )}
+            {/* underline removed */}
           </Link>
           {(isAdmin || isModerator) && (
             <Link
@@ -114,14 +77,7 @@ const MainNavbar = () => {
               }`}
             >
               Админ
-              {isActive('/admin') && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute -bottom-2 left-0 right-0 h-0.5 bg-primary rounded-full"
-                  initial={false}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                />
-              )}
+              {/* underline removed */}
             </Link>
           )}
         </nav>
@@ -130,14 +86,13 @@ const MainNavbar = () => {
           {/* Mobile nav trigger */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild className="md:hidden">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <div
+                className="md:hidden"
               >
                 <Button variant="ghost" size="icon">
                   <Menu className="h-5 w-5" />
                 </Button>
-              </motion.div>
+              </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent sideOffset={4} align="start" className="w-64 p-2 md:hidden">
               <DropdownMenuItem asChild>
@@ -214,53 +169,40 @@ const MainNavbar = () => {
           </DropdownMenu>
 
           {/* Favorites, cart, avatar for desktop only */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="hidden md:block"
-          >
+          <div className="hidden md:block">
             <Link to="/favorites">
               <Button variant="ghost" size="icon" className="relative">
                 <Heart className={`h-5 w-5 transition-all duration-200 ${favoriteIds.length > 0 ? 'fill-primary text-primary' : 'hover:text-primary'}`} />
                 {favoriteIds.length > 0 && (
-                  <motion.span 
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
+                  <span 
                     className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground"
                   >
                     {favoriteIds.length}
-                  </motion.span>
+                  </span>
                 )}
               </Button>
             </Link>
-          </motion.div>
+          </div>
           
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="hidden md:block"
-          >
+          <div className="hidden md:block">
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="h-5 w-5 transition-all duration-200 hover:text-primary" />
                 {totalItems > 0 && (
-                  <motion.span 
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
+                  <span 
                     className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground"
                   >
                     {totalItems}
-                  </motion.span>
+                  </span>
                 )}
               </Button>
             </Link>
-          </motion.div>
+          </div>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild className="hidden md:block">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <div
+                className="hidden md:block"
               >
                 <Button variant="ghost" size="icon" className="rounded-full p-0 h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <Avatar className="h-full w-full">
@@ -270,7 +212,7 @@ const MainNavbar = () => {
                     </AvatarFallback>
                   </Avatar>
                 </Button>
-              </motion.div>
+              </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-64 p-2" align="end" forceMount>
               <div className="flex items-center justify-start gap-3 p-3">
@@ -319,7 +261,7 @@ const MainNavbar = () => {
           </DropdownMenu>
         </div>
       </div>
-    </motion.header>
+    </header>
   )
 }
 

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -67,12 +66,7 @@ const Register = () => {
 
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
+      <div className="w-full max-w-md">
         <Card className="border-0 shadow-lg">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="font-display text-2xl">Создать аккаунт</CardTitle>
@@ -153,7 +147,7 @@ const Register = () => {
             </p>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   )
 }

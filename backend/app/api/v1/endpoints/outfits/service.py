@@ -248,7 +248,7 @@ def _calculate_outfit_price(outfit: Outfit) -> OutfitOut:
         name=outfit.name,
         style=outfit.style,
         description=outfit.description,
-        owner_id=outfit.owner_id,
+        owner_id=str(outfit.owner_id),
         created_at=outfit.created_at,
         updated_at=outfit.updated_at,
         tops=categorized_items.get("tops", []),
@@ -257,7 +257,7 @@ def _calculate_outfit_price(outfit: Outfit) -> OutfitOut:
         accessories=categorized_items.get("accessories", []),
         fragrances=categorized_items.get("fragrances", []),
         total_price=total_price,
-        tryon_image_url=getattr(outfit, "tryon_image_url", None)
+        tryon_image_url=outfit.tryon_image_url,
     )
 
 def _price_in_range(price: Optional[float], min_price: Optional[float], max_price: Optional[float]) -> bool:
