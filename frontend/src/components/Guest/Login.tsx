@@ -12,47 +12,31 @@ const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const { login } = useAuth()
+  const { login, error, clearError } = useAuth()
   const navigate = useNavigate()
+  const [localError, setLocalError] = useState<string | undefined>(undefined);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+    clearError()
+    setLocalError(undefined)
     // Client-side validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      setError('Некорректный email')
-      return
+      setLocalError('Некорректный email');
+      return;
     }
     if (password.length < 8) {
-      setError('Пароль должен содержать минимум 8 символов')
-      return
+      setLocalError('Пароль должен быть не менее 8 символов');
+      return;
     }
-
     setIsLoading(true)
     
     try {
       await login(email, password)
       navigate('/home')
     } catch (err) {
-      let errorMessage = 'Не удалось войти. Пожалуйста, проверьте данные'
-      
-      if (err instanceof Error) {
-        if (err.message.includes('Invalid credentials')) {
-          errorMessage = 'Неверный email или пароль'
-        } else if (err.message.includes('User not found')) {
-          errorMessage = 'Пользователь не найден'
-        } else if (err.message.includes('Incorrect password')) {
-          errorMessage = 'Неверный пароль'
-        } else {
-          errorMessage = err.message || errorMessage
-        }
-      } else if (typeof err === 'string') {
-        errorMessage = err
-      }
-      
-      setError(errorMessage)
+      // error уже будет установлен через AuthContext
     } finally {
       setIsLoading(false)
     }
@@ -76,7 +60,7 @@ const Login = () => {
                   type="email"
                   placeholder="Ваш email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={e => { setEmail(e.target.value); setLocalError(undefined); }}
                   required
                   className="h-11"
                 />
@@ -87,7 +71,7 @@ const Login = () => {
                   type="password"
                   placeholder="Пароль"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => { setPassword(e.target.value); setLocalError(undefined); }}
                   required
                   className="h-11"
                 />
@@ -95,11 +79,11 @@ const Login = () => {
               <Button type="submit" className="w-full h-11" disabled={isLoading}>
                 {isLoading ? 'Вход...' : 'Войти'}
               </Button>
-              {error && (
+              {(localError || error) && (
               <Alert variant="default" className="bg-blue-50 border-blue-200">
                 <InfoCircledIcon className="h-4 w-4 text-blue-600" /> 
                 <AlertDescription className="text-blue-800">
-                  {error}
+                  {localError || error}
                 </AlertDescription>
               </Alert>
             )}
@@ -121,7 +105,7 @@ const Login = () => {
               <Link 
                 to="/register" 
                 className="font-medium text-primary hover:underline"
-                onClick={() => setError(null)}
+                onClick={() => clearError()}
               >
                 Зарегистрируйтесь
               </Link>

@@ -13,52 +13,34 @@ const Register = () => {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const { register: registerUser } = useAuth()
+  const { register: registerUser, error, clearError } = useAuth()
   const navigate = useNavigate()
+  const [localError, setLocalError] = useState<string | undefined>(undefined);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+    clearError()
+    setLocalError(undefined)
     // Client-side validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      setError('Некорректный email')
-      return
+      setLocalError('Некорректный email');
+      return;
     }
     if (password.length < 8) {
-      setError('Пароль должен содержать минимум 8 символов')
-      return
+      setLocalError('Пароль должен быть не менее 8 символов');
+      return;
     }
-
     if (password !== confirmPassword) {
-      setError('Пароли не совпадают')
-      return
+      setLocalError('Пароли не совпадают');
+      return;
     }
-
     setIsLoading(true)
-
     try {
       await registerUser(email, password)
       navigate('/home')
     } catch (err) {
-      let errorMessage = 'Не удалось зарегистрироваться. Пожалуйста, попробуйте снова'
-
-      if (err instanceof Error) {
-        if (err.message.includes('email already in use')) {
-          errorMessage = 'Этот email уже используется'
-        } else if (err.message.includes('weak password')) {
-          errorMessage = 'Пароль должен содержать не менее 6 символов'
-        } else if (err.message.includes('invalid email')) {
-          errorMessage = 'Неверный формат email'
-        } else {
-          errorMessage = err.message || errorMessage
-        }
-      } else if (typeof err === 'string') {
-        errorMessage = err
-      }
-
-      setError(errorMessage)
+      // error уже будет установлен через AuthContext
     } finally {
       setIsLoading(false)
     }
@@ -82,7 +64,7 @@ const Register = () => {
                   type="email"
                   placeholder="Ваш email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={e => { setEmail(e.target.value); setLocalError(undefined); }}
                   required
                   className="h-11"
                 />
@@ -93,7 +75,7 @@ const Register = () => {
                   type="password"
                   placeholder="Пароль"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => { setPassword(e.target.value); setLocalError(undefined); }}
                   required
                   className="h-11"
                 />
@@ -105,7 +87,7 @@ const Register = () => {
                   type="password"
                   placeholder="Повторите пароль"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={e => { setConfirmPassword(e.target.value); setLocalError(undefined); }}
                   required
                   className="h-11"
                 />
@@ -114,11 +96,11 @@ const Register = () => {
                 {isLoading ? 'Создание аккаунта...' : 'Создать аккаунт'}
               </Button>
 
-              {error && (
+              {(localError || error) && (
                 <Alert variant="default" className="bg-blue-50 border-blue-200">
                   <InfoCircledIcon className="h-4 w-4 text-blue-600" />
                   <AlertDescription className="text-blue-800">
-                    {error}
+                    {localError || error}
                   </AlertDescription>
                 </Alert>
               )}
@@ -140,7 +122,7 @@ const Register = () => {
               <Link 
                 to="/login" 
                 className="font-medium text-primary hover:underline"
-                onClick={() => setError(null)}
+                onClick={() => clearError()}
               >
                 Войти
               </Link>
