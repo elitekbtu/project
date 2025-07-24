@@ -1,48 +1,48 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, Suspense, lazy } from 'react'
 import { CartProvider } from './context/CartContext'
 import { FavoritesProvider } from './context/FavoritesContext'
 import { initializePWA } from './utils/pwa'
 import { AuthProvider, useAuth } from './context/AuthContext'
 // Layouts
-import GuestLayout from './layouts/GuestLayout'
-import MainLayout from './layouts/MainLayout'
+const GuestLayout = lazy(() => import('./layouts/GuestLayout'))
+const MainLayout = lazy(() => import('./layouts/MainLayout'))
 // Guest pages
-import Hero from './components/Guest/Hero'
-import Login from './components/Guest/Login'
-import Register from './components/Guest/Register'
-import GoogleCallback from './components/Guest/GoogleCallback'
+const Hero = lazy(() => import('./components/Guest/Hero'))
+const Login = lazy(() => import('./components/Guest/Login'))
+const Register = lazy(() => import('./components/Guest/Register'))
+const GoogleCallback = lazy(() => import('./components/Guest/GoogleCallback'))
 // Main pages
-import Home from './components/Main/Home'
-import Profile from './components/Main/Profile'
-import Settings from './components/Main/Settings'
-import Logout from './components/Main/Logout'
-import RequireAuth from './components/common/RequireAuth'
-import RequireAdmin from './components/common/RequireAdmin'
-import RequirePanelAccess from './components/common/RequirePanelAccess'
-import ItemsList from './components/Main/Items/ItemsList'
-import ItemDetail from './components/Main/Items/ItemDetail'
-import OutfitsList from './components/Main/Outfits/OutfitsList'
-import OutfitDetail from './components/Main/Outfits/OutfitDetail'
-import Favorites from './components/Main/Favorites'
-import AdminDashboard from './components/Admin/AdminDashboard'
-import UsersAdmin from './components/Admin/UsersAdmin'
-import ItemsAdmin from './components/Admin/ItemsAdmin'
-import OutfitsAdmin from './components/Admin/OutfitsAdmin'
-import ModeratorAnalytics from './components/Admin/ModeratorAnalytics'
-import SystemAnalytics from './components/Admin/SystemAnalytics'
-import UserForm from './components/Admin/UserForm'
-import ItemForm from './components/Admin/ItemForm'
-import OutfitForm from './components/Admin/OutfitForm'
-import Cart from './components/Main/Cart'
-import History from './components/Main/History'
-import OutfitBuilder from './components/Main/Outfits/OutfitBuilder'
-import CreateOutfit from './components/Main/Outfits/CreateOutfit'
-import EditOutfit from './components/Main/Outfits/EditOutfit'
-import LamodaParser from './components/Admin/LamodaParser'
-import ShopsList from './components/Main/Shops/ShopsList'
-import ShopItemsList from './components/Main/Shops/ShopItemsList'
-import ShopItemDetail from './components/Main/Shops/ShopItemDetail'
+const Home = lazy(() => import('./components/Main/Home'))
+const Profile = lazy(() => import('./components/Main/Profile'))
+const Settings = lazy(() => import('./components/Main/Settings'))
+const Logout = lazy(() => import('./components/Main/Logout'))
+const RequireAuth = lazy(() => import('./components/common/RequireAuth'))
+const RequireAdmin = lazy(() => import('./components/common/RequireAdmin'))
+const RequirePanelAccess = lazy(() => import('./components/common/RequirePanelAccess'))
+const ItemsList = lazy(() => import('./components/Main/Items/ItemsList'))
+const ItemDetail = lazy(() => import('./components/Main/Items/ItemDetail'))
+const OutfitsList = lazy(() => import('./components/Main/Outfits/OutfitsList'))
+const OutfitDetail = lazy(() => import('./components/Main/Outfits/OutfitDetail'))
+const Favorites = lazy(() => import('./components/Main/Favorites'))
+const AdminDashboard = lazy(() => import('./components/Admin/AdminDashboard'))
+const UsersAdmin = lazy(() => import('./components/Admin/UsersAdmin'))
+const ItemsAdmin = lazy(() => import('./components/Admin/ItemsAdmin'))
+const OutfitsAdmin = lazy(() => import('./components/Admin/OutfitsAdmin'))
+const ModeratorAnalytics = lazy(() => import('./components/Admin/ModeratorAnalytics'))
+const SystemAnalytics = lazy(() => import('./components/Admin/SystemAnalytics'))
+const UserForm = lazy(() => import('./components/Admin/UserForm'))
+const ItemForm = lazy(() => import('./components/Admin/ItemForm'))
+const OutfitForm = lazy(() => import('./components/Admin/OutfitForm'))
+const Cart = lazy(() => import('./components/Main/Cart'))
+const History = lazy(() => import('./components/Main/History'))
+const OutfitBuilder = lazy(() => import('./components/Main/Outfits/OutfitBuilder'))
+const CreateOutfit = lazy(() => import('./components/Main/Outfits/CreateOutfit'))
+const EditOutfit = lazy(() => import('./components/Main/Outfits/EditOutfit'))
+const LamodaParser = lazy(() => import('./components/Admin/LamodaParser'))
+const ShopsList = lazy(() => import('./components/Main/Shops/ShopsList'))
+const ShopItemsList = lazy(() => import('./components/Main/Shops/ShopItemsList'))
+const ShopItemDetail = lazy(() => import('./components/Main/Shops/ShopItemDetail'))
 
 function AppContent() {
   const { loading } = useAuth();
@@ -50,54 +50,56 @@ function AppContent() {
   return (
     <CartProvider>
       <FavoritesProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public / Guest Routes */}
-            <Route element={<GuestLayout />}>
-              <Route path="/" element={<Hero />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/google/callback" element={<GoogleCallback />} />
-            </Route>
-            {/* Authenticated User Routes (no auth guard yet) */}
-            <Route element={<RequireAuth><MainLayout /></RequireAuth>}>
-              <Route path="/home" element={<Home />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/logout" element={<Logout />} />
-              <Route path="/items" element={<ItemsList />} />
-              <Route path="/items/:id" element={<ItemDetail />} />
-              <Route path="/outfits" element={<OutfitsList />} />
-              <Route path="/outfits/new" element={<CreateOutfit />} />
-              <Route path="/outfits/builder" element={<OutfitBuilder />} />
-              <Route path="/outfits/:id" element={<OutfitDetail />} />
-              <Route path="/outfits/:id/edit" element={<EditOutfit />} />
-              <Route path="/shops" element={<ShopsList />} />
-              <Route path="/shops/:moderatorId/items/:id" element={<ShopItemDetail />} />
-              <Route path="/shops/:moderatorId/items" element={<ShopItemsList />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route element={<RequirePanelAccess><AdminDashboard /></RequirePanelAccess>}>
-                <Route path="/admin/users" element={<RequireAdmin><UsersAdmin /></RequireAdmin>} />
-                <Route path="/admin/users/new" element={<RequireAdmin><UserForm /></RequireAdmin>} />
-                <Route path="/admin/users/:id/edit" element={<RequireAdmin><UserForm /></RequireAdmin>} />
-                <Route path="/admin/items" element={<ItemsAdmin />} />
-                <Route path="/admin/items/new" element={<ItemForm />} />
-                <Route path="/admin/items/:id/edit" element={<ItemForm />} />
-                {/* Новый роут для Lamoda парсера только для администратора */}
-                <Route path="/admin/lamoda-parser" element={<RequireAdmin><LamodaParser /></RequireAdmin>} />
-                <Route path="/admin/outfits" element={<RequireAdmin><OutfitsAdmin /></RequireAdmin>} />
-                <Route path="/admin/outfits/new" element={<RequireAdmin><OutfitForm /></RequireAdmin>} />
-                <Route path="/admin/outfits/:id/edit" element={<RequireAdmin><OutfitForm /></RequireAdmin>} />
-                <Route path="/admin/analytics" element={<ModeratorAnalytics />} />
-                <Route path="/admin/system" element={<RequireAdmin><SystemAnalytics /></RequireAdmin>} />
+        <Suspense fallback={<div>Загрузка...</div>}>
+          <BrowserRouter>
+            <Routes>
+              {/* Public / Guest Routes */}
+              <Route element={<GuestLayout />}>
+                <Route path="/" element={<Hero />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/google/callback" element={<GoogleCallback />} />
               </Route>
-            </Route>
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </BrowserRouter>
+              {/* Authenticated User Routes (no auth guard yet) */}
+              <Route element={<RequireAuth><MainLayout /></RequireAuth>}>
+                <Route path="/home" element={<Home />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/logout" element={<Logout />} />
+                <Route path="/items" element={<ItemsList />} />
+                <Route path="/items/:id" element={<ItemDetail />} />
+                <Route path="/outfits" element={<OutfitsList />} />
+                <Route path="/outfits/new" element={<CreateOutfit />} />
+                <Route path="/outfits/builder" element={<OutfitBuilder />} />
+                <Route path="/outfits/:id" element={<OutfitDetail />} />
+                <Route path="/outfits/:id/edit" element={<EditOutfit />} />
+                <Route path="/shops" element={<ShopsList />} />
+                <Route path="/shops/:moderatorId/items/:id" element={<ShopItemDetail />} />
+                <Route path="/shops/:moderatorId/items" element={<ShopItemsList />} />
+                <Route path="/favorites" element={<Favorites />} />
+                <Route path="/history" element={<History />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route element={<RequirePanelAccess><AdminDashboard /></RequirePanelAccess>}>
+                  <Route path="/admin/users" element={<RequireAdmin><UsersAdmin /></RequireAdmin>} />
+                  <Route path="/admin/users/new" element={<RequireAdmin><UserForm /></RequireAdmin>} />
+                  <Route path="/admin/users/:id/edit" element={<RequireAdmin><UserForm /></RequireAdmin>} />
+                  <Route path="/admin/items" element={<ItemsAdmin />} />
+                  <Route path="/admin/items/new" element={<ItemForm />} />
+                  <Route path="/admin/items/:id/edit" element={<ItemForm />} />
+                  {/* Новый роут для Lamoda парсера только для администратора */}
+                  <Route path="/admin/lamoda-parser" element={<RequireAdmin><LamodaParser /></RequireAdmin>} />
+                  <Route path="/admin/outfits" element={<RequireAdmin><OutfitsAdmin /></RequireAdmin>} />
+                  <Route path="/admin/outfits/new" element={<RequireAdmin><OutfitForm /></RequireAdmin>} />
+                  <Route path="/admin/outfits/:id/edit" element={<RequireAdmin><OutfitForm /></RequireAdmin>} />
+                  <Route path="/admin/analytics" element={<ModeratorAnalytics />} />
+                  <Route path="/admin/system" element={<RequireAdmin><SystemAnalytics /></RequireAdmin>} />
+                </Route>
+              </Route>
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </BrowserRouter>
+        </Suspense>
       </FavoritesProvider>
     </CartProvider>
   );
