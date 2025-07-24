@@ -46,36 +46,41 @@ const ShopItemDetail = lazy(() => import('./components/Main/Shops/ShopItemDetail
 
 function AppContent() {
   const { loading } = useAuth();
-  if (loading) return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'column',
-      background: '#fff',
-      zIndex: 9999
-    }}>
+  if (loading) {
+    return (
       <div style={{
-        width: 32,
-        height: 32,
-        border: '3px solid #e5e7eb', // light gray
-        borderTop: '3px solid #111', // black
-        borderRadius: '50%',
-        animation: 'spin 0.8s linear infinite',
-        marginBottom: 14,
-        boxSizing: 'border-box',
-        background: 'transparent'
-      }} />
-      <div style={{ fontSize: 15, color: '#222', fontWeight: 400, letterSpacing: 0.2, fontFamily: 'inherit' }}>Загрузка...</div>
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
-    </div>
-  );
+        position: 'fixed',
+        inset: 0,
+        minHeight: '100vh',
+        width: '100vw',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        background: '#fff',
+        zIndex: 9999
+      }}>
+        <div style={{
+          width: 32,
+          height: 32,
+          border: '3px solid #e5e7eb',
+          borderTop: '3px solid #111',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+          marginBottom: 14,
+          boxSizing: 'border-box',
+          background: 'transparent'
+        }} />
+        <div style={{ fontSize: 15, color: '#222', fontWeight: 400, letterSpacing: 0.2, fontFamily: 'inherit' }}>Загрузка...</div>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
   return (
     <CartProvider>
       <FavoritesProvider>
