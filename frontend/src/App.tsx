@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useEffect, Suspense, lazy } from 'react'
 import { CartProvider } from './context/CartContext'
 import { FavoritesProvider } from './context/FavoritesContext'
@@ -43,6 +43,7 @@ const LamodaParser = lazy(() => import('./components/Admin/LamodaParser'))
 const ShopsList = lazy(() => import('./components/Main/Shops/ShopsList'))
 const ShopItemsList = lazy(() => import('./components/Main/Shops/ShopItemsList'))
 const ShopItemDetail = lazy(() => import('./components/Main/Shops/ShopItemDetail'))
+const NotFound404 = lazy(() => import('./components/common/NotFound404'))
 
 function AppContent() {
   const { loading } = useAuth();
@@ -130,7 +131,7 @@ function AppContent() {
                 </Route>
               </Route>
               {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" />} />
+              <Route path="*" element={<NotFound404 />} />
             </Routes>
           </BrowserRouter>
         </Suspense>
