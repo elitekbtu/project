@@ -15,6 +15,8 @@ interface AuthContextProps {
   hasPanelAccess: boolean
   /** Обновить данные пользователя в контексте (после изменения профиля) */
   updateUser: (data?: ProfileOut) => void
+  error?: string
+  clearError: () => void
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined)
@@ -32,15 +34,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return undefined
   })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | undefined>(undefined)
+
+  const clearError = () => setError(undefined)
 
   const fetchMe = async () => {
+    setError(undefined)
     try {
       const resp = await api.get<ProfileOut>('/api/me')
       setUser(resp.data)
       persistUser(resp.data)
-    } catch {
+    } catch (e: any) {
       clearStoredTokens()
       setUser(undefined)
+      setError(e?.response?.data?.detail || e.message || 'Ошибка загрузки профиля')
     } finally {
       setLoading(false)
     }
@@ -70,26 +77,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     setLoading(true)
-    const data = await loginApi(email, password)
-    setUser(data.user)
-    persistUser(data.user)
-    setLoading(false)
+    setError(undefined)
+    try {
+      const data = await loginApi(email, password)
+      setUser(data.user)
+      persistUser(data.user)
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || e.message || 'Ошибка входа')
+      throw e
+    } finally {
+      setLoading(false)
+    }
   }
 
   const register = async (email: string, password: string) => {
     setLoading(true)
-    const data = await registerApi(email, password)
-    setUser(data.user)
-    persistUser(data.user)
-    setLoading(false)
+    setError(undefined)
+    try {
+      const data = await registerApi(email, password)
+      setUser(data.user)
+      persistUser(data.user)
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || e.message || 'Ошибка регистрации')
+      throw e
+    } finally {
+      setLoading(false)
+    }
   }
 
   const logout = async () => {
     setLoading(true)
-    await logoutApi(getStoredTokens().refresh)
-    setUser(undefined)
-    persistUser(undefined)
-    setLoading(false)
+    setError(undefined)
+    try {
+      await logoutApi(getStoredTokens().refresh)
+      setUser(undefined)
+      persistUser(undefined)
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || e.message || 'Ошибка выхода')
+      throw e
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -104,6 +132,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isModerator: !!(user as any)?.is_moderator,
         hasPanelAccess: !!(user?.is_admin || (user as any)?.is_moderator),
         updateUser,
+        error,
+        clearError,
       }}
     >
       {children}
