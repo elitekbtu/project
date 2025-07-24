@@ -57,15 +57,17 @@ function AppContent() {
       zIndex: 9999
     }}>
       <div style={{
-        width: 48,
-        height: 48,
-        border: '6px solid #e0e0e0',
-        borderTop: '6px solid #3b82f6',
+        width: 32,
+        height: 32,
+        border: '3px solid #e5e7eb', // light gray
+        borderTop: '3px solid #111', // black
         borderRadius: '50%',
-        animation: 'spin 1s linear infinite',
-        marginBottom: 24
+        animation: 'spin 0.8s linear infinite',
+        marginBottom: 14,
+        boxSizing: 'border-box',
+        background: 'transparent'
       }} />
-      <div style={{ fontSize: 20, color: '#3b82f6', fontWeight: 500 }}>Загрузка...</div>
+      <div style={{ fontSize: 15, color: '#222', fontWeight: 400, letterSpacing: 0.2, fontFamily: 'inherit' }}>Загрузка...</div>
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
