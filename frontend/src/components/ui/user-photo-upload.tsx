@@ -6,7 +6,7 @@ import { useToast } from './use-toast'
 import { getStoredTokens } from '../../api/client'
 
 interface UserPhotoUploadProps {
-  onPhotoSelected: (photoUrl: string) => void
+  onPhotoSelected: (photoUrl: string, file?: File) => void
   currentPhoto?: string
   className?: string
 }
@@ -67,7 +67,7 @@ export const UserPhotoUpload: React.FC<UserPhotoUploadProps> = ({
       }
 
       const data = await response.json()
-      onPhotoSelected(data.photo_url)
+      onPhotoSelected(data.photo_url, file)
       
       toast({
         title: 'Фото загружено',

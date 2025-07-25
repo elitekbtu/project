@@ -44,6 +44,8 @@ const ShopsList = lazy(() => import('./components/Main/Shops/ShopsList'))
 const ShopItemsList = lazy(() => import('./components/Main/Shops/ShopItemsList'))
 const ShopItemDetail = lazy(() => import('./components/Main/Shops/ShopItemDetail'))
 const NotFound404 = lazy(() => import('./components/common/NotFound404'))
+const ChatStylist = lazy(() => import('./components/Main/ChatStylist/ChatStylist'))
+const PhotoSearch = lazy(() => import('./components/Main/PhotoSearch/PhotoSearch'))
 
 function AppContent() {
   const { loading } = useAuth();
@@ -114,6 +116,8 @@ function AppContent() {
                 <Route path="/favorites" element={<Favorites />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/cart" element={<Cart />} />
+                <Route path="/chat-stylist" element={<ChatStylist />} />
+                <Route path="/photo-search" element={<PhotoSearch />} />
                 <Route element={<RequirePanelAccess><AdminDashboard /></RequirePanelAccess>}>
                   <Route path="/admin/users" element={<RequireAdmin><UsersAdmin /></RequireAdmin>} />
                   <Route path="/admin/users/new" element={<RequireAdmin><UserForm /></RequireAdmin>} />

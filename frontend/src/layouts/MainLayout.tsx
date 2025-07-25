@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import MainNavbar from '../components/Main/Navbar'
 import MainFooter from '../components/Main/Footer'
 import BottomNav from '../components/Main/BottomNav'
+import ChatStylist from '../components/Main/ChatStylist/ChatStylist'
 
 const MainLayout = () => {
   return (
@@ -12,6 +13,7 @@ const MainLayout = () => {
       </main>
       <MainFooter />
       <BottomNav />
+      <ChatStylist />
     </div>
   )
 }

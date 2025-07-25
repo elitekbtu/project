@@ -8,6 +8,7 @@ from app.api.v1.endpoints.cart import router as cart_router
 from app.api.v1.endpoints.outfits import router as outfits_router
 from app.api.v1.endpoints.items import router as items_router
 from app.api.v1.endpoints.catalog import router as catalog_router
+from app.api.v1.endpoints.chat_stylist import router as chat_stylist_router
 from app.api.v1.endpoints import system 
 from app.core.rate_limiting import limiter, RATE_LIMITS
 
@@ -20,6 +21,7 @@ api_router.include_router(cart_router)
 api_router.include_router(outfits_router)
 api_router.include_router(items_router)
 api_router.include_router(catalog_router)
+api_router.include_router(chat_stylist_router)
 api_router.include_router(system.router)
 
 # Системный мониторинг
