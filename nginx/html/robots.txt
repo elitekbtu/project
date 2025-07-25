@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://www.trc.works/sitemap.xml
-Host: www.trc.works 
