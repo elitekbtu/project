@@ -1,1 +1,0 @@
-import{j as a}from"./ui-Cqf_O7uz.js";import{r as t}from"./router-YsGj19cs.js";import{c as s}from"./utils-CytzSlOG.js";const m=t.forwardRef(({className:e,...o},r)=>a.jsx("label",{ref:r,className:s("block text-sm font-medium leading-6 text-muted-foreground","peer-disabled:cursor-not-allowed peer-disabled:opacity-70",e),...o}));m.displayName="Label";export{m as L};

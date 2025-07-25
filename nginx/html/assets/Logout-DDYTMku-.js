@@ -1,1 +1,0 @@
-import{j as o}from"./ui-Cqf_O7uz.js";import{r,N as s}from"./router-YsGj19cs.js";import{u as e}from"./index-DUoZO1f1.js";import"./vendor-BtP0CW_r.js";const f=()=>{const{logout:t}=e();return r.useEffect(()=>{t()},[]),o.jsx(s,{to:"/",replace:!0})};export{f as default};
