@@ -40,26 +40,26 @@ const OutfitsList = () => {
   const styleParam = new URLSearchParams(location.search).get('style');
   const brand = new URLSearchParams(location.search).get('brand');
   // Формируем динамический title/description
-  let pageTitle = 'Образы — TRC';
-  let pageDesc = 'Готовые модные образы, подборки и вдохновение на платформе TRC.';
-  let pageKeywords = 'образы, стиль, мода, подборки, вдохновение, TRC';
+  let pageTitle = 'Мои образы — TRC';
+  let pageDesc = 'Ваши созданные образы и подборки на платформе TRC.';
+  let pageKeywords = 'мои образы, стиль, мода, подборки, TRC';
   if (styleParam) {
-    pageTitle = `Образы в стиле: ${styleParam} — TRC`;
-    pageDesc = `Образы и подборки в стиле «${styleParam}» на TRC.`;
+    pageTitle = `Мои образы в стиле: ${styleParam} — TRC`;
+    pageDesc = `Ваши образы и подборки в стиле «${styleParam}» на TRC.`;
     pageKeywords += `, стиль, ${styleParam}`;
   } else if (style) {
-    pageTitle = `Образы в стиле: ${style} — TRC`;
-    pageDesc = `Образы и подборки в стиле «${style}» на TRC.`;
+    pageTitle = `Мои образы в стиле: ${style} — TRC`;
+    pageDesc = `Ваши образы и подборки в стиле «${style}» на TRC.`;
     pageKeywords += `, стиль, ${style}`;
   }
   if (brand) {
-    pageTitle = `Бренд: ${brand} — Образы — TRC`;
-    pageDesc = `Образы с товарами бренда «${brand}» на TRC.`;
+    pageTitle = `Бренд: ${brand} — Мои образы — TRC`;
+    pageDesc = `Ваши образы с товарами бренда «${brand}» на TRC.`;
     pageKeywords += `, бренд, ${brand}`;
   }
   if (search) {
-    pageTitle = `Поиск: ${search} — Образы — TRC`;
-    pageDesc = `Результаты поиска по запросу «${search}» среди образов на TRC.`;
+    pageTitle = `Поиск: ${search} — Мои образы — TRC`;
+    pageDesc = `Результаты поиска по запросу «${search}» среди ваших образов на TRC.`;
     pageKeywords += `, поиск, ${search}`;
   }
   if (minPrice || maxPrice) {
@@ -186,8 +186,8 @@ const OutfitsList = () => {
           transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <h1 className="mb-4 font-display text-3xl font-bold tracking-tight">Образы</h1>
-          <p className="text-muted-foreground">Подберите готовый лук или вдохновитесь идеями наших стилистов.</p>
+          <h1 className="mb-4 font-display text-3xl font-bold tracking-tight">Мои образы</h1>
+          <p className="text-muted-foreground">Ваши созданные образы и подборки. Здесь отображаются только ваши собственные луки.</p>
         </motion.div>
 
         {/* Search & actions */}
@@ -330,8 +330,14 @@ const OutfitsList = () => {
             className="py-16 text-center"
           >
             <Sparkles className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-            <h3 className="mb-2 font-display text-xl font-semibold">Образы не найдены</h3>
-            <p className="text-muted-foreground">Попробуйте изменить запрос или создайте собственный лук!</p>
+            <h3 className="mb-2 font-display text-xl font-semibold">У вас пока нет образов</h3>
+            <p className="text-muted-foreground mb-6">Создайте свой первый образ и начните собирать стильные подборки!</p>
+            <Button asChild className="rounded-full">
+              <Link to="/outfits/new">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Создать первый образ
+              </Link>
+            </Button>
           </motion.div>
         )}
 
@@ -348,7 +354,7 @@ const OutfitsList = () => {
         {/* End of Results */}
         {!loading && !loadingMore && !hasMore && outfits.length > 0 && (
           <div className="mt-8 text-center">
-            <p className="text-sm text-muted-foreground">Больше образов нет</p>
+            <p className="text-sm text-muted-foreground">Это все ваши образы</p>
           </div>
         )}
 

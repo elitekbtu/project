@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../../../api/client'
-import { Heart, ShoppingCart, Pencil, ChevronLeft, MessageSquare, Trash2 } from 'lucide-react'
+import { Heart, ShoppingCart, Pencil, ChevronLeft, MessageSquare, Trash2, Lock, AlertTriangle } from 'lucide-react'
 import { type OutfitCommentOut, type VariantOut } from '../../../api/schemas'
 import {
   toggleFavoriteOutfit,
@@ -35,7 +35,7 @@ interface Outfit {
   style: string
   description?: string | null
   total_price?: number | null
-  owner_id?: number | string
+  owner_id: string
   tops: Item[]
   bottoms: Item[]
   footwear: Item[]
@@ -47,8 +47,10 @@ interface Outfit {
 const OutfitDetail = () => {
   const { id } = useParams<{ id: string }>()
   const { user, isAdmin } = useAuth()
+  const navigate = useNavigate()
   const [outfit, setOutfit] = useState<Outfit | null>(null)
   const [loading, setLoading] = useState(true)
+  const [accessError, setAccessError] = useState<string | null>(null)
   const [comments, setComments] = useState<OutfitCommentOut[]>([])
   const [newComment, setNewComment] = useState('')
   const [rating, setRating] = useState<number | undefined>()
@@ -60,11 +62,20 @@ const OutfitDetail = () => {
     const fetchOutfit = async () => {
       try {
         const resp = await api.get<Outfit>(`/api/outfits/${id}`)
-        setOutfit(resp.data)
+        const fetchedOutfit = resp.data
+        
+        setOutfit(fetchedOutfit)
         const commentsData = await listOutfitComments(Number(id))
         setComments(commentsData)
-      } catch (err) {
+      } catch (err: any) {
         console.error(err)
+        if (err.response?.status === 403) {
+          setAccessError('У вас нет доступа к этому образу')
+        } else if (err.response?.status === 404) {
+          setAccessError('Образ не найден')
+        } else {
+          setAccessError('Произошла ошибка при загрузке образа')
+        }
       } finally {
         setLoading(false)
       }
@@ -196,6 +207,39 @@ const OutfitDetail = () => {
     </div>
   )
 
+  // Показываем ошибку доступа
+  if (accessError) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="container mx-auto px-4 py-16 text-center"
+      >
+        <Lock className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+        <h3 className="mb-2 text-2xl font-semibold tracking-tight">Нет доступа</h3>
+        <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+          {accessError}
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Button asChild variant="outline" className="rounded-full">
+            <Link to="/outfits">
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Вернуться к моим образам
+            </Link>
+          </Button>
+          {!user && (
+            <Button asChild className="rounded-full">
+              <Link to="/login">
+                Войти в систему
+              </Link>
+            </Button>
+          )}
+        </div>
+      </motion.div>
+    )
+  }
+
   if (!outfit) return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -203,7 +247,7 @@ const OutfitDetail = () => {
       transition={{ duration: 0.6 }}
       className="container mx-auto px-4 py-16 text-center"
     >
-      <ShoppingCart className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+      <AlertTriangle className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
       <h3 className="mb-2 text-2xl font-semibold tracking-tight">Образ не найден</h3>
       <p className="text-muted-foreground mb-6 max-w-md mx-auto">
         Возможно, образ был удален или перемещен
@@ -211,7 +255,7 @@ const OutfitDetail = () => {
       <Button asChild variant="outline" className="rounded-full">
         <Link to="/outfits">
           <ChevronLeft className="mr-2 h-4 w-4" />
-          Вернуться к образам
+          Вернуться к моим образам
         </Link>
       </Button>
     </motion.div>
@@ -252,7 +296,7 @@ const OutfitDetail = () => {
           <Button asChild variant="ghost" className="pl-0 hover:bg-transparent">
             <Link to="/outfits" className="flex items-center text-sm text-muted-foreground hover:text-foreground">
               <ChevronLeft className="mr-1 h-4 w-4" />
-              Назад к образам
+              Назад к моим образам
             </Link>
           </Button>
         </motion.div>
@@ -372,7 +416,7 @@ const OutfitDetail = () => {
                 />
               </Button>
 
-              {(user && (user.id === (outfit.owner_id as any) || isAdmin)) && (
+              {(user && (String(user.id) === outfit.owner_id || isAdmin)) && (
                 <Button 
                   asChild 
                   size="lg"

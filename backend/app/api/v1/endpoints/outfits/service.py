@@ -231,8 +231,14 @@ def _validate_and_categorize_items(db: Session, item_ids: List[int], expected_ca
     return validated_items
 
 def _check_owner_or_admin(outfit: Outfit, user: Optional[User]):
-    if not user or (outfit.owner_id != str(user.id) and not is_admin(user)):
+    if not user or (outfit.owner_id != user.id and not is_admin(user)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+
+def _is_owner_or_admin(outfit: Outfit, user: Optional[User]) -> bool:
+    """Проверяет, является ли пользователь владельцем образа или админом"""
+    if not user:
+        return False
+    return outfit.owner_id == user.id or is_admin(user)
 
 def _calculate_outfit_price(outfit: Outfit) -> OutfitOut:
     """
@@ -278,7 +284,7 @@ def create_outfit(db: Session, user: User, outfit_in: OutfitCreate):
         name=outfit_in.name,
         style=outfit_in.style,
         description=outfit_in.description,
-        owner_id=str(user.id),
+        owner_id=user.id,
         tryon_image_url=outfit_in.tryon_image_url  # Используем tryon_image_url из схемы
     )
 
@@ -307,7 +313,7 @@ def create_outfit(db: Session, user: User, outfit_in: OutfitCreate):
 
 def list_outfits(
     db: Session,
-    user: Optional[User],
+    user: User,
     skip: int = 0,
     limit: int = 100,
     q: Optional[str] = None,
@@ -324,8 +330,9 @@ def list_outfits(
         selectinload(Outfit.outfit_items).selectinload(OutfitItem.item)
     )
 
-    if user is not None and not is_admin(user):
-        query = query.filter(Outfit.owner_id == str(user.id))
+    # Показываем образы владельца и админа
+    if not is_admin(user):
+        query = query.filter(Outfit.owner_id == user.id)
 
     if q:
         search = f"%{q}%"
@@ -385,14 +392,18 @@ def clear_outfit_view_history(db: Session, user: User):
     db.query(OutfitView).filter(OutfitView.user_id == user.id).delete()
     db.commit()
 
-def get_outfit(db: Session, outfit_id: int, user: Optional[User]):
+def get_outfit(db: Session, outfit_id: int, user: User):
     outfit = db.query(Outfit).filter(Outfit.id == outfit_id).first()
     if not outfit:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Outfit not found")
 
-    if user:
-        db.add(OutfitView(user_id=user.id, outfit_id=outfit.id))
-        db.commit()
+    # Проверяем права доступа: пользователь может видеть только свои outfits, админ - все
+    if not _is_owner_or_admin(outfit, user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    # Добавляем запись о просмотре
+    db.add(OutfitView(user_id=user.id, outfit_id=outfit.id))
+    db.commit()
 
     return _calculate_outfit_price(outfit)
 

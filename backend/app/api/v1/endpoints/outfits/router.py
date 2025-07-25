@@ -40,7 +40,7 @@ def list_outfits(
     sort_by: Optional[str] = Query(None),
     category: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    user: Optional[User] = Depends(get_current_user_optional)
+    user: User = Depends(get_current_user)
 ):
     from app.core.pagination import get_pagination
     skip, limit = get_pagination(page)
@@ -87,7 +87,7 @@ def trending_outfits(request: Request, limit: int = 20, db: Session = Depends(ge
 
 @router.get("/{outfit_id}", response_model=OutfitOut)
 @limiter.limit(RATE_LIMITS["api"])
-def get_outfit(request: Request, outfit_id: int, db: Session = Depends(get_db), user: Optional[User] = Depends(get_current_user_optional)):
+def get_outfit(request: Request, outfit_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.get_outfit(db, outfit_id, user)
 
 
