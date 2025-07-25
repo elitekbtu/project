@@ -9,6 +9,7 @@ import { TrendingUp, Heart, ShoppingBag, Sparkles, Store } from 'lucide-react'
 import ItemImage from '../common/ItemImage'
 import { CATEGORY_LABELS } from '../../constants'
 import { Helmet } from 'react-helmet-async'
+import ItemsCarousel from '../common/ItemsCarousel'
 
 interface Item {
   id: number
@@ -17,6 +18,36 @@ interface Item {
   image_url?: string | null
   brand?: string | null
   category?: string | null
+  variants?: any[] | null // добавлено
+}
+
+const getDisplayPrice = (item: Item): number | undefined => {
+  if ((item as any).variants && (item as any).variants.length > 0) {
+    const prices = (item as any).variants
+      .map((v: any) => v.price)
+      .filter((p: any) => typeof p === 'number' && p !== null) as number[]
+    if (prices.length > 0) {
+      const minPrice = Math.min(...prices)
+      return minPrice
+    }
+  }
+  return item.price ?? undefined
+}
+
+const getDiscountInfo = (item: Item): { hasDiscount: boolean; originalPrice?: number; discountPercent?: number } => {
+  if (!item.price || typeof item.price !== 'number') {
+    return { hasDiscount: false }
+  }
+  const displayPrice = getDisplayPrice(item)
+  if (!displayPrice || displayPrice >= item.price) {
+    return { hasDiscount: false }
+  }
+  const discountPercent = Math.round(((item.price - displayPrice) / item.price) * 100)
+  return {
+    hasDiscount: true,
+    originalPrice: item.price,
+    discountPercent
+  }
 }
 
 const Home = () => {
@@ -38,7 +69,7 @@ const Home = () => {
     fetchTrending()
   }, [])
 
-
+  const discounted = trending.filter(item => getDiscountInfo(item).hasDiscount)
 
   return (
     <>
@@ -111,62 +142,25 @@ const Home = () => {
           </div>
         </section>
 
-        {/* Trending Items */}
+        {/* Trending Items Section */}
         {!loading && trending.length > 0 && (
-          <section
-            className="mb-12"
-          >
-            <div className="mb-8 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <h2 className="font-display text-2xl font-semibold">Популярные товары</h2>
-              </div>
-              <Button variant="outline" asChild>
-                <Link to="/items">Смотреть все</Link>
-              </Button>
-            </div>
-            <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
-              {trending.slice(0, 8).map((item, index) => (
-                <div key={item.id}>
-                  <Card className="group overflow-hidden transition-all hover:shadow-lg">
-                    <Link to={`/items/${item.id}`}>
-                      <div className="relative aspect-square md:aspect-[3/4] overflow-hidden">
-                        <ItemImage
-                          src={item.image_url}
-                          alt={item.name}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          fallbackClassName="h-full w-full"
-                        />
-                        <div className="absolute top-3 left-3">
-                          <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm">
-                            #{index + 1}
-                          </Badge>
-                        </div>
-                      </div>
-                      <CardContent className="p-4">
-                        <div className="mb-2">
-                          {item.category && (
-                            <Badge variant="outline" className="mb-2 text-xs capitalize">
-                              {CATEGORY_LABELS[item.category] ?? item.category}
-                            </Badge>
-                          )}
-                          <h3 className="font-medium leading-tight" title={item.name}>
-                            {item.name}
-                          </h3>
-                          {item.brand && (
-                            <p className="text-sm text-muted-foreground">{item.brand}</p>
-                          )}
-                        </div>
-                        {item.price !== null && item.price !== undefined && (
-                          <p className="font-semibold">{item.price.toLocaleString()} ₸</p>
-                        )}
-                      </CardContent>
-                    </Link>
-                  </Card>
-                </div>
-              ))}
-            </div>
-          </section>
+          <ItemsCarousel
+            items={trending}
+            getDisplayPrice={getDisplayPrice}
+            getDiscountInfo={getDiscountInfo}
+            title="Популярные товары"
+            showIndexBadge
+          />
+        )}
+
+        {/* Discounted Items Section */}
+        {!loading && discounted.length > 0 && (
+          <ItemsCarousel
+            items={discounted}
+            getDisplayPrice={getDisplayPrice}
+            getDiscountInfo={getDiscountInfo}
+            title="Товары со скидкой"
+          />
         )}
 
         {/* Empty State */}
