@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     DB_POOL_TIMEOUT: int = Field(60, env="DB_POOL_TIMEOUT")
     DB_POOL_RECYCLE: int = Field(3600, env="DB_POOL_RECYCLE")
 
+    # API Documentation
+    ENABLE_DOCS: bool = Field(True, env="ENABLE_DOCS")
+
     class Config:
         env_file = ".env"
         case_sensitive = True

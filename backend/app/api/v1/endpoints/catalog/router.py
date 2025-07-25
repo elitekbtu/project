@@ -109,7 +109,7 @@ async def start_catalog_parsing(
             detail=f"Ошибка запуска парсинга: {str(e)}"
         )
 
-@router.get("/tasks/{task_id}/status", response_model=TaskStatus)
+@router.get("/tasks/{task_id}/status", response_model=TaskStatus, dependencies=[Depends(require_admin)])
 @limiter.limit(RATE_LIMITS["api"])
 async def get_task_status(request: Request, task_id: str):
     """
@@ -162,7 +162,7 @@ async def get_task_status(request: Request, task_id: str):
             detail=f"Ошибка получения статуса задачи: {str(e)}"
         )
 
-@router.get("/tasks/{task_id}/result")
+@router.get("/tasks/{task_id}/result", dependencies=[Depends(require_admin)])
 @limiter.limit(RATE_LIMITS["api"])
 async def get_task_result(request: Request, task_id: str):
     """
@@ -265,7 +265,7 @@ async def list_active_tasks(request: Request):
             detail=f"Ошибка получения списка задач: {str(e)}"
         )
 
-@router.get("/stats", response_model=CatalogStats)
+@router.get("/stats", response_model=CatalogStats, dependencies=[Depends(require_admin)])
 @limiter.limit(RATE_LIMITS["api"])
 async def get_catalog_stats(request: Request):
     """
@@ -361,7 +361,7 @@ async def simple_parse_only(
             detail=f"Ошибка запуска парсинга: {str(e)}"
         )
 
-@router.get("/health")
+@router.get("/health", dependencies=[Depends(require_admin)])
 @limiter.limit(RATE_LIMITS["api"])
 async def catalog_health_check(request: Request):
     """
@@ -469,7 +469,7 @@ async def test_catalog_chain(request: Request):
             detail=f"Ошибка запуска тестовой цепочки: {str(e)}"
         )
 
-@router.post("/test-parser", response_model=Dict[str, str])
+@router.post("/test-parser", response_model=Dict[str, str], dependencies=[Depends(require_admin)])
 @limiter.limit(RATE_LIMITS["api"])
 async def test_parser_no_auth(
     request: Request,
@@ -503,7 +503,7 @@ async def test_parser_no_auth(
             detail=f"Ошибка запуска тестового парсинга: {str(e)}"
         )
 
-@router.get("/image-proxy")
+@router.get("/image-proxy", dependencies=[Depends(require_admin)])
 @limiter.limit(RATE_LIMITS["api"])
 async def proxy_lamoda_image(request: Request, url: str = Query(..., description="URL изображения Lamoda")):
     """

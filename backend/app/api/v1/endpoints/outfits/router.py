@@ -79,12 +79,6 @@ def clear_outfit_view_history(request: Request, db: Session = Depends(get_db), u
     return service.clear_outfit_view_history(db, user)
 
 
-@router.get("/trending", response_model=List[OutfitOut])
-@limiter.limit(RATE_LIMITS["api"])
-def trending_outfits(request: Request, limit: int = 20, db: Session = Depends(get_db)):
-    return service.trending_outfits(db, limit)
-
-
 @router.get("/{outfit_id}", response_model=OutfitOut)
 @limiter.limit(RATE_LIMITS["api"])
 def get_outfit(request: Request, outfit_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
@@ -118,12 +112,22 @@ def toggle_favorite_outfit(request: Request, outfit_id: int, db: Session = Depen
 @router.post("/{outfit_id}/comments", response_model=OutfitCommentOut, status_code=status.HTTP_201_CREATED)
 @limiter.limit(RATE_LIMITS["api"])
 def add_outfit_comment(request: Request, outfit_id: int, payload: OutfitCommentCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    outfit = db.query(service.Outfit).filter_by(id=outfit_id).first()
+    if not outfit:
+        raise HTTPException(status_code=404, detail="Outfit not found")
+    if not service._is_owner_or_admin(outfit, user):
+        raise HTTPException(status_code=403, detail="Access denied")
     return service.add_outfit_comment(db, user, outfit_id, payload)
 
 
 @router.get("/{outfit_id}/comments", response_model=List[OutfitCommentOut])
 @limiter.limit(RATE_LIMITS["api"])
-def list_outfit_comments(request: Request, outfit_id: int, db: Session = Depends(get_db)):
+def list_outfit_comments(request: Request, outfit_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    outfit = db.query(service.Outfit).filter_by(id=outfit_id).first()
+    if not outfit:
+        raise HTTPException(status_code=404, detail="Outfit not found")
+    if not service._is_owner_or_admin(outfit, user):
+        raise HTTPException(status_code=403, detail="Access denied")
     return service.list_outfit_comments(db, outfit_id)
 
 

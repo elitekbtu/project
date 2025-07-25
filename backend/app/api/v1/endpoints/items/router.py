@@ -67,7 +67,7 @@ def list_items(
     clothing_type: Optional[str] = None,
     moderator_id: Optional[int] = None,
     db: Session = Depends(get_db),
-    user: Optional[User] = Depends(get_current_user_optional),
+    user: User = Depends(get_current_user),
 ):
     filters = {
         "q": q,
@@ -129,19 +129,19 @@ def list_items(
 
 @router.get("/trending", response_model=List[ItemOut])
 @limiter.limit(RATE_LIMITS["api"])
-def trending_items(request: Request, limit: int = 20, db: Session = Depends(get_db)):
+def trending_items(request: Request, limit: int = 20, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.trending_items(db, limit)
 
 
 @router.get("/collections", response_model=List[ItemOut])
 @limiter.limit(RATE_LIMITS["api"])
-def items_by_collection(request: Request, name: str, db: Session = Depends(get_db)):
+def items_by_collection(request: Request, name: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.items_by_collection(db, name)
 
 
 @router.get("/collections/names", response_model=List[str])
 @limiter.limit(RATE_LIMITS["api"])
-def list_collections(request: Request, db: Session = Depends(get_db)):
+def list_collections(request: Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Return distinct collection names (non-null) from items."""
     return service.list_collections(db)
 
@@ -180,7 +180,7 @@ def clear_view_history(request: Request, db: Session = Depends(get_db), user: Us
 
 @router.get("/{item_id}", response_model=ItemOut)
 @limiter.limit(RATE_LIMITS["api"])
-def get_item(request: Request, item_id: int, db: Session = Depends(get_db), current: Optional[User] = Depends(get_current_user_optional)):
+def get_item(request: Request, item_id: int, db: Session = Depends(get_db), current: User = Depends(get_current_user)):
     return service.get_item(db, item_id, current)
 
 
@@ -203,7 +203,7 @@ def delete_item(
 
 @router.get("/{item_id}/similar", response_model=List[ItemOut])
 @limiter.limit(RATE_LIMITS["api"])
-def similar_items(request: Request, item_id: int, limit: int = 10, db: Session = Depends(get_db)):
+def similar_items(request: Request, item_id: int, limit: int = 10, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.similar_items(db, item_id, limit)
 
 
@@ -221,7 +221,7 @@ def add_item_comment(request: Request, item_id: int, payload: CommentCreate, db:
 
 @router.get("/{item_id}/comments", response_model=List[CommentOut])
 @limiter.limit(RATE_LIMITS["api"])
-def list_item_comments(request: Request, item_id: int, db: Session = Depends(get_db)):
+def list_item_comments(request: Request, item_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.list_item_comments(db, item_id)
 
 
@@ -244,7 +244,7 @@ def delete_item_comment(
 
 @router.get("/{item_id}/variants", response_model=List[VariantOut])
 @limiter.limit(RATE_LIMITS["api"])
-def list_variants(request: Request, item_id: int, db: Session = Depends(get_db)):
+def list_variants(request: Request, item_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.list_variants(db, item_id)
 
 
@@ -271,7 +271,7 @@ def delete_variant(request: Request, variant_id: int, db: Session = Depends(get_
 
 @router.get("/{item_id}/images", response_model=List[ItemImageOut])
 @limiter.limit(RATE_LIMITS["api"])
-def list_item_images(request: Request, item_id: int, db: Session = Depends(get_db)):
+def list_item_images(request: Request, item_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return service.list_item_images(db, item_id)
 
 

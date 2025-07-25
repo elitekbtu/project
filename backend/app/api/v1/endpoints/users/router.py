@@ -29,14 +29,14 @@ def list_users(
 
 @router.get("/moderators", response_model=List[dict])
 @limiter.limit(RATE_LIMITS["api"])
-def list_moderators(request: Request, db: Session = Depends(get_db), current_user = Depends(get_current_user_optional)):
+def list_moderators(request: Request, db: Session = Depends(get_db), current_user = Depends(require_admin)):
     """Get list of all moderators with their shop information"""
     return service.list_moderators(db)
 
 
 @router.get("/{user_id}", response_model=UserOut)
 @limiter.limit(RATE_LIMITS["api"])
-def get_user(request: Request, user_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user_optional)):
+def get_user(request: Request, user_id: int, db: Session = Depends(get_db), current_user = Depends(require_admin)):
     user = service.get_user(db, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -54,7 +54,7 @@ def delete_user(request: Request, user_id: int, db: Session = Depends(get_db), c
 
 @router.get("/{user_id}/outfits")
 @limiter.limit(RATE_LIMITS["api"])
-def list_user_outfits(request: Request, user_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user_optional)):
+def list_user_outfits(request: Request, user_id: int, db: Session = Depends(get_db), current_user = Depends(require_admin)):
     return service.list_user_outfits(db, user_id)
 
 
