@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { shopsApi, type Shop } from '../../../api/shops'
 import { Card, CardContent } from '../../ui/card'
@@ -12,6 +12,7 @@ import ImageCarousel from '../../common/ImageCarousel'
 import ItemImage from '../../common/ItemImage'
 import { CATEGORY_LABELS } from '../../../constants'
 import { Skeleton } from '../../ui/skeleton'
+import { Helmet } from 'react-helmet-async'
 
 interface Item {
   id: number
@@ -33,6 +34,23 @@ const ShopItemsList = () => {
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const { isFavorite, toggleFavorite } = useFavorites()
+  const location = useLocation();
+  // Получаем бренд из query-параметров, если есть
+  const brand = new URLSearchParams(location.search).get('brand');
+  // Формируем динамический title/description
+  let pageTitle = shop ? `${shop.name} — Магазин на TRC` : 'Магазин — TRC';
+  let pageDesc = shop ? `Товары магазина «${shop.name}» на платформе TRC.` : 'Товары магазина на платформе TRC.';
+  let pageKeywords = shop ? `магазин, ${shop.name}, товары, TRC` : 'магазин, товары, TRC';
+  if (brand) {
+    pageTitle = `Бренд: ${brand} — ${shop ? shop.name + ' — ' : ''}Магазин — TRC`;
+    pageDesc = `Товары бренда «${brand}» в магазине${shop ? ' «' + shop.name + '»' : ''} на TRC.`;
+    pageKeywords += `, бренд, ${brand}`;
+  }
+  if (search) {
+    pageTitle = `Поиск: ${search} — ${shop ? shop.name + ' — ' : ''}Магазин — TRC`;
+    pageDesc = `Результаты поиска по запросу «${search}» в магазине${shop ? ' «' + shop.name + '»' : ''} на TRC.`;
+    pageKeywords += `, поиск, ${search}`;
+  }
 
   // Функция для загрузки данных
   const fetchItems = async (pageToLoad: number, q?: string) => {
@@ -162,7 +180,15 @@ const ShopItemsList = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <>
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDesc} />
+        <meta name="keywords" content={pageKeywords} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDesc} />
+      </Helmet>
+      <div className="container mx-auto px-4 py-8">
       {/* Back button */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -310,6 +336,7 @@ const ShopItemsList = () => {
         </div>
       )}
     </div>
+    </>
   )
 }
 

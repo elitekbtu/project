@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { listItems } from '../../../api/items'
 import { Card, CardContent } from '../../ui/card'
@@ -41,8 +41,33 @@ const ItemsList = () => {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [minPrice, setMinPrice] = useState<string>('')
   const [maxPrice, setMaxPrice] = useState<string>('')
+  const location = useLocation();
+  // Получаем бренд из query-параметров, если есть
+  const brand = new URLSearchParams(location.search).get('brand');
 
-  // Функция для загрузки данных
+  // Формируем динамический title/description
+  let pageTitle = 'Каталог товаров — TRC';
+  let pageDesc = 'Каталог модной одежды, аксессуаров и обуви на платформе TRC. Большой выбор, фильтры, тренды.';
+  let pageKeywords = 'каталог, одежда, обувь, аксессуары, мода, покупки, TRC';
+  if (category && CATEGORY_LABELS[category]) {
+    pageTitle = `${CATEGORY_LABELS[category]} — Каталог — TRC`;
+    pageDesc = `Каталог: ${CATEGORY_LABELS[category]}. Модная одежда и аксессуары на TRC.`;
+    pageKeywords += `, ${CATEGORY_LABELS[category]}`;
+  }
+  if (brand) {
+    pageTitle = `Бренд: ${brand} — Каталог — TRC`;
+    pageDesc = `Каталог товаров бренда «${brand}» на TRC.`;
+    pageKeywords += `, бренд, ${brand}`;
+  }
+  if (search) {
+    pageTitle = `Поиск: ${search} — Каталог — TRC`;
+    pageDesc = `Результаты поиска по запросу «${search}» в каталоге TRC.`;
+    pageKeywords += `, поиск, ${search}`;
+  }
+  if (minPrice || maxPrice) {
+    pageDesc += ` Цена: ${minPrice || 'от'} — ${maxPrice || 'до'}.`;
+  }
+
   const fetchItems = async (pageToLoad: number, q?: string, cat?: string | undefined, discount?: boolean) => {
     const params: any = { page: pageToLoad }
     if (q !== undefined && q !== null && q !== '') params.q = q
@@ -170,11 +195,11 @@ const ItemsList = () => {
   return (
     <>
       <Helmet>
-        <title>Каталог товаров — TRC</title>
-        <meta name="description" content="Каталог модной одежды, аксессуаров и обуви на платформе TRC. Большой выбор, фильтры, тренды." />
-        <meta name="keywords" content="каталог, одежда, обувь, аксессуары, мода, покупки, TRC" />
-        <meta property="og:title" content="Каталог товаров — TRC" />
-        <meta property="og:description" content="Каталог модной одежды, аксессуаров и обуви на платформе TRC." />
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDesc} />
+        <meta name="keywords" content={pageKeywords} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDesc} />
       </Helmet>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}

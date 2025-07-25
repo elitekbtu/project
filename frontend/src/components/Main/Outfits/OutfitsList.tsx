@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { listOutfits } from '../../../api/outfits'
 import { Button } from '../../ui/button'
@@ -34,6 +34,37 @@ const OutfitsList = () => {
   const [maxPrice, setMaxPrice] = useState<string>('')
   const [onlyWithPrice, setOnlyWithPrice] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
+
+  const location = useLocation();
+  // Получаем стиль и бренд из query-параметров, если есть
+  const styleParam = new URLSearchParams(location.search).get('style');
+  const brand = new URLSearchParams(location.search).get('brand');
+  // Формируем динамический title/description
+  let pageTitle = 'Образы — TRC';
+  let pageDesc = 'Готовые модные образы, подборки и вдохновение на платформе TRC.';
+  let pageKeywords = 'образы, стиль, мода, подборки, вдохновение, TRC';
+  if (styleParam) {
+    pageTitle = `Образы в стиле: ${styleParam} — TRC`;
+    pageDesc = `Образы и подборки в стиле «${styleParam}» на TRC.`;
+    pageKeywords += `, стиль, ${styleParam}`;
+  } else if (style) {
+    pageTitle = `Образы в стиле: ${style} — TRC`;
+    pageDesc = `Образы и подборки в стиле «${style}» на TRC.`;
+    pageKeywords += `, стиль, ${style}`;
+  }
+  if (brand) {
+    pageTitle = `Бренд: ${brand} — Образы — TRC`;
+    pageDesc = `Образы с товарами бренда «${brand}» на TRC.`;
+    pageKeywords += `, бренд, ${brand}`;
+  }
+  if (search) {
+    pageTitle = `Поиск: ${search} — Образы — TRC`;
+    pageDesc = `Результаты поиска по запросу «${search}» среди образов на TRC.`;
+    pageKeywords += `, поиск, ${search}`;
+  }
+  if (minPrice || maxPrice) {
+    pageDesc += ` Цена: ${minPrice || 'от'} — ${maxPrice || 'до'}.`;
+  }
 
   // Получить уникальные стили из текущих outfits
   const styleOptions = Array.from(new Set(outfits.map(o => o.style).filter(Boolean)))
@@ -141,11 +172,11 @@ const OutfitsList = () => {
   return (
     <>
       <Helmet>
-        <title>Образы — TRC</title>
-        <meta name="description" content="Готовые модные образы, подборки и вдохновение на платформе TRC." />
-        <meta name="keywords" content="образы, стиль, мода, подборки, вдохновение, TRC" />
-        <meta property="og:title" content="Образы — TRC" />
-        <meta property="og:description" content="Готовые модные образы, подборки и вдохновение на платформе TRC." />
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDesc} />
+        <meta name="keywords" content={pageKeywords} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDesc} />
       </Helmet>
       <div className="container mx-auto px-4">
         {/* Header */}
