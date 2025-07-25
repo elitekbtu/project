@@ -82,11 +82,11 @@ async def start_pool_monitoring():
     asyncio.create_task(monitor_pool())
 
 @app.get("/api/health")
-async def health_check():
+async def health_check(user: User = Depends(require_admin)):
     return {"status": "ok", "message": "Service is running"}
 
 @app.get("/api/health/ready")
-async def readiness_check():
+async def readiness_check(user: User = Depends(require_admin)):
     return {"status": "ok", "message": "Service is ready"}
 
 @app.get("/api/me", response_model=ProfileOut)

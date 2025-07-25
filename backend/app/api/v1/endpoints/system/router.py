@@ -206,7 +206,8 @@ async def get_system_analytics(
 @limiter.limit(RATE_LIMITS["api"])
 async def get_system_health(
     request: Request,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
 ):
     """Получить состояние здоровья системы"""
     

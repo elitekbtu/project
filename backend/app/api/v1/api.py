@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Depends, HTTPException, status
 
 from app.api.v1.endpoints.users import router as users_router
 from app.api.v1.endpoints.auth import router as auth_router
@@ -11,6 +11,8 @@ from app.api.v1.endpoints.catalog import router as catalog_router
 from app.api.v1.endpoints.chat_stylist import router as chat_stylist_router
 from app.api.v1.endpoints import system 
 from app.core.rate_limiting import limiter, RATE_LIMITS
+from app.core.security import require_admin, get_current_user, is_admin
+from app.db.models.user import User
 
 api_router = APIRouter()
 api_router.include_router(users_router)
@@ -24,17 +26,32 @@ api_router.include_router(catalog_router)
 api_router.include_router(chat_stylist_router)
 api_router.include_router(system.router)
 
+def allow_localhost_or_admin(request: Request, user: User = Depends(get_current_user)):
+    """Allow localhost access without admin rights, require admin for other IPs"""
+    client_ip = request.client.host
+    localhost_ips = ['127.0.0.1', '::1', 'localhost']
+    
+    if client_ip in localhost_ips:
+        return user  # Allow access for localhost
+    elif is_admin(user):
+        return user  # Allow access for admins
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Admin access required for non-localhost requests"
+        )
+
 # Системный мониторинг
 @api_router.get("/system/pool-stats")
 @limiter.limit(RATE_LIMITS["api"])
-async def get_database_pool_stats(request: Request):
+async def get_database_pool_stats(request: Request, current_user: User = Depends(require_admin)):
     """Получить статистику пула соединений базы данных."""
     from app.core.database import get_pool_stats
     return get_pool_stats()
 
 @api_router.get("/system/health")
 @limiter.limit(RATE_LIMITS["api"])
-async def system_health_check(request: Request):
+async def system_health_check(request: Request, current_user: User = Depends(allow_localhost_or_admin)):
     """Проверка здоровья системы."""
     from app.core.database import get_pool_stats
     from datetime import datetime
@@ -56,7 +73,7 @@ async def system_health_check(request: Request):
 
 @api_router.get("/system/rate-limits")
 @limiter.limit(RATE_LIMITS["api"])
-async def get_rate_limit_stats(request: Request):
+async def get_rate_limit_stats(request: Request, current_user: User = Depends(require_admin)):
     """Получить статистику rate limiting."""
     from datetime import datetime
     
