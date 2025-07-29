@@ -152,21 +152,38 @@ class ResponseGenerationAgent(BaseAgent):
     
     async def _generate_ai_response(self, user_message: str, intent_result, personalization_context: Dict) -> str:
         """Генерирует ответ с помощью AI"""
+        if not self.client:
+            self.logger.warning("OpenAI клиент не инициализирован, используем template ответ")
+            return self._generate_template_response(intent_result, personalization_context)
+            
         try:
             prompt = self._create_ai_prompt(user_message, intent_result, personalization_context)
             
-            response = await self.client.chat.completions.create(
-                model=settings.AZURE_OPENAI_DEPLOYMENT_NAME,
-                messages=[
-                    {"role": "system", "content": self._get_system_prompt()},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.8,
-                max_tokens=300
-            )
-            
-            return response.choices[0].message.content.strip()
-            
+            # Добавляем timeout и retry логику
+            import asyncio
+            try:
+                response = await asyncio.wait_for(
+                    self.client.chat.completions.create(
+                        model=settings.AZURE_OPENAI_DEPLOYMENT_NAME,
+                        messages=[
+                            {"role": "system", "content": self._get_system_prompt()},
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=0.8,
+                        max_tokens=300
+                    ),
+                    timeout=10.0  # 10 секунд timeout
+                )
+                
+                return response.choices[0].message.content.strip()
+                
+            except asyncio.TimeoutError:
+                self.logger.warning("Timeout при обращении к OpenAI API в response_generation")
+                return self._generate_template_response(intent_result, personalization_context)
+            except Exception as api_error:
+                self.logger.error(f"Ошибка OpenAI API в response_generation: {api_error}")
+                return self._generate_template_response(intent_result, personalization_context)
+                
         except Exception as e:
             self.logger.error(f"Ошибка AI генерации: {e}")
             return self._generate_template_response(intent_result, personalization_context)

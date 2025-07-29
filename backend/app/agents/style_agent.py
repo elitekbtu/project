@@ -914,24 +914,24 @@ class StyleAgent(BaseAgent):
             return {"reply": "Ой, что-то пошло не так! 😅 Давайте попробуем еще раз или я помогу подобрать что-то другое. Может быть, стоит уточнить запрос?", "items": []}
 
     async def _create_ai_response(self, search_results: Dict[str, List[Item]], user_message: str, market_insights: Dict, preferences: Dict) -> str:
-        """Создает живой ответ с помощью AI"""
+        """Создает AI ответ на основе результатов поиска"""
+        if not self.client:
+            logger.warning("OpenAI клиент не инициализирован, используем fallback ответ")
+            return self._create_comprehensive_response(search_results, user_message, market_insights, preferences)
+            
         try:
-            total_items = sum(len(items) for items in search_results.values() if items)
-            
-            if total_items == 0:
-                return "Ой, к сожалению, не нашла товары по вашему запросу 😔 Но не расстраивайтесь! Может быть, стоит попробовать другой ценовой диапазон или категорию? Я всегда готов помочь найти что-то подходящее!"
-            
-            # Подготавливаем информацию о товарах для AI
+            # Подготавливаем данные для промпта
             items_info = []
-            main_items = search_results.get('main_results', [])
+            for category, items in search_results.items():
+                if items:
+                    category_items = []
+                    for item in items[:3]:  # Берем только первые 3 товара из каждой категории
+                        category_items.append(f"• {item.name} - {item.price} ₸")
+                    items_info.append(f"{category}:\n" + "\n".join(category_items))
             
-            for item in main_items[:5]:
-                price_str = f"{item.price:,.0f} ₸" if item.price else "Цена не указана"
-                items_info.append(f"- {item.name} ({item.brand or 'Бренд не указан'}) в цвете {item.color or 'не указан'} за {price_str}")
+            items_text = "\n\n".join(items_info) if items_info else "Товары не найдены"
             
-            items_text = "\n".join(items_info)
-            
-            # Создаем промпт для AI
+            # Создаем промпт
             prompt = f"""
 Пользователь ищет: "{user_message}"
 
@@ -948,18 +948,31 @@ class StyleAgent(BaseAgent):
 Отвечай на русском языке, максимум 50-75 слов.
 """
             
-            response = await self.client.chat.completions.create(
-                model=settings.AZURE_OPENAI_DEPLOYMENT_NAME,
-                messages=[
-                    {"role": "system", "content": "Ты — очень краткий консультант-стилист. Отвечай СУПЕР КРАТКО (50-75 слов), используй эмодзи, НЕ используй markdown или нумерацию."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.8,
-                max_tokens=100
-            )
-            
-            return response.choices[0].message.content.strip()
-            
+            # Добавляем timeout и retry логику
+            import asyncio
+            try:
+                response = await asyncio.wait_for(
+                    self.client.chat.completions.create(
+                        model=settings.AZURE_OPENAI_DEPLOYMENT_NAME,
+                        messages=[
+                            {"role": "system", "content": "Ты — очень краткий консультант-стилист. Отвечай СУПЕР КРАТКО (50-75 слов), используй эмодзи, НЕ используй markdown или нумерацию."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=0.8,
+                        max_tokens=100
+                    ),
+                    timeout=10.0  # 10 секунд timeout
+                )
+                
+                return response.choices[0].message.content.strip()
+                
+            except asyncio.TimeoutError:
+                logger.warning("Timeout при обращении к OpenAI API в style_agent")
+                return self._create_comprehensive_response(search_results, user_message, market_insights, preferences)
+            except Exception as api_error:
+                logger.error(f"Ошибка OpenAI API в style_agent: {api_error}")
+                return self._create_comprehensive_response(search_results, user_message, market_insights, preferences)
+                
         except Exception as e:
             logger.error(f"Error creating AI response: {e}")
             # Fallback к обычному ответу

@@ -78,9 +78,11 @@ class IntentRecognitionAgent(BaseAgent):
                 intent=IntentType.PRODUCT_REQUEST,
                 patterns=[
                     r"футболк", r"рубашк", r"джинс", r"плать", r"куртк", r"костюм", r"брюк",
+                    r"шорт", r"юбк", r"свитер", r"худи", r"толстовк", r"пиджак", r"пальто",
+                    r"кроссовк", r"туфл", r"ботинк", r"сапог", r"сандал", r"кед", r"мокасин",
                     r"покажи", r"найди", r"ищу", r"нужн", r"хочу", r"дай", r"дайте",
                     r"цена", r"стоимость", r"диапазон", r"от", r"до", r"тысяч", r"тенге",
-                    r"цвет", r"размер", r"бренд", r"стиль", r"мода", r"одежд", r"купить",
+                    r"цвет", r"размер", r"бренд", r"стиль", r"мода", r"одежд", r"обув", r"купить",
                     r"посмотреть", r"выбрать", r"подобрать", r"рекомендуй", r"советуй"
                 ],
                 confidence=0.85,
@@ -132,7 +134,7 @@ class IntentRecognitionAgent(BaseAgent):
                 intent=IntentType.QUESTION,
                 patterns=[
                     r"что", r"как", r"где", r"когда", r"почему", r"зачем", r"какой",
-                    r"what", r"how", r"where", r"when", r"why", r"which", r"?"
+                    r"what", r"how", r"where", r"when", r"why", r"which", r"\?"
                 ],
                 confidence=0.6,
                 context_hints=["вопрос", "интерес", "любопытство"],
@@ -208,6 +210,19 @@ class IntentRecognitionAgent(BaseAgent):
         best_match = None
         best_confidence = 0.0
         
+        # Специальная обработка для запросов типа "покажи кроссовки"
+        if any(word in message_lower for word in ["покажи", "найди", "ищу", "нужны", "хочу"]) and \
+           any(word in message_lower for word in ["футболк", "рубашк", "джинс", "плать", "куртк", "костюм", "брюк",
+                                                 "шорт", "юбк", "свитер", "худи", "толстовк", "пиджак", "пальто",
+                                                 "кроссовк", "туфл", "ботинк", "сапог", "сандал", "кед", "мокасин",
+                                                 "одежд", "обув"]):
+            return IntentResult(
+                intent=IntentType.PRODUCT_REQUEST,
+                confidence=0.9,
+                entities=self._extract_entities(message, ["product_type", "price_range", "color", "size", "brand"]),
+                context_hints=["покупка", "выбор", "поиск"]
+            )
+        
         for pattern in self.intent_patterns:
             for regex_pattern in pattern.patterns:
                 # Проверяем, что паттерн не пустой и валидный
@@ -248,23 +263,40 @@ class IntentRecognitionAgent(BaseAgent):
     
     async def _analyze_with_ai(self, message: str, context: ConversationContext) -> Optional[IntentResult]:
         """Анализ намерений с помощью AI"""
+        if not self.client:
+            self.logger.warning("OpenAI клиент не инициализирован, пропускаем AI анализ")
+            return None
+            
         try:
             # Создаем промпт для AI
             prompt = self._create_ai_prompt(message, context)
             
-            response = await self.client.chat.completions.create(
-                model=settings.AZURE_OPENAI_DEPLOYMENT_NAME,
-                messages=[
-                    {"role": "system", "content": self._get_system_prompt()},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.3,
-                max_tokens=200
-            )
-            
-            ai_response = response.choices[0].message.content.strip()
-            return self._parse_ai_response(ai_response)
-            
+            # Добавляем timeout и retry логику
+            import asyncio
+            try:
+                response = await asyncio.wait_for(
+                    self.client.chat.completions.create(
+                        model=settings.AZURE_OPENAI_DEPLOYMENT_NAME,
+                        messages=[
+                            {"role": "system", "content": self._get_system_prompt()},
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=0.3,
+                        max_tokens=200
+                    ),
+                    timeout=10.0  # 10 секунд timeout
+                )
+                
+                ai_response = response.choices[0].message.content.strip()
+                return self._parse_ai_response(ai_response)
+                
+            except asyncio.TimeoutError:
+                self.logger.warning("Timeout при обращении к OpenAI API")
+                return None
+            except Exception as api_error:
+                self.logger.error(f"Ошибка OpenAI API: {api_error}")
+                return None
+                
         except Exception as e:
             self.logger.error(f"Ошибка AI анализа: {e}")
             return None
@@ -384,6 +416,26 @@ class IntentRecognitionAgent(BaseAgent):
         entities = {}
         message_lower = message.lower()
         
+        # Извлечение типа товара
+        if 'product_type' in entity_types:
+            product_types = {
+                'футболк': 'футболка', 'рубашк': 'рубашка', 'джинс': 'джинсы', 
+                'плать': 'платье', 'куртк': 'куртка', 'костюм': 'костюм', 'брюк': 'брюки',
+                'шорт': 'шорты', 'юбк': 'юбка', 'свитер': 'свитер', 'худи': 'худи', 
+                'толстовк': 'толстовка', 'пиджак': 'пиджак', 'пальто': 'пальто',
+                'кроссовк': 'кроссовки', 'туфл': 'туфли', 'ботинк': 'ботинки', 
+                'сапог': 'сапоги', 'сандал': 'сандалии', 'кед': 'кеды', 'мокасин': 'мокасины',
+                'одежд': 'одежда', 'обув': 'обувь'
+            }
+            
+            found_products = []
+            for pattern, product_type in product_types.items():
+                if pattern in message_lower:
+                    found_products.append(product_type)
+            
+            if found_products:
+                entities['product_types'] = found_products
+        
         # Извлечение ценового диапазона
         if 'price_range' in entity_types:
             price_match = re.search(r'(\d+)\s*-\s*(\d+)', message)
@@ -392,19 +444,38 @@ class IntentRecognitionAgent(BaseAgent):
                     'min': int(price_match.group(1)),
                     'max': int(price_match.group(2))
                 }
+            else:
+                # Поиск отдельных цен
+                price_matches = re.findall(r'(\d+)\s*(?:тенге|₸|руб|₽)', message)
+                if price_matches:
+                    prices = [int(p) for p in price_matches]
+                    entities['price_range'] = {
+                        'min': min(prices),
+                        'max': max(prices)
+                    }
         
         # Извлечение цветов
         if 'color' in entity_types:
-            colors = ['черный', 'белый', 'красный', 'синий', 'зеленый', 'желтый', 'серый', 'розовый']
+            colors = ['черный', 'белый', 'красный', 'синий', 'зеленый', 'желтый', 'серый', 'розовый', 
+                     'голубой', 'фиолетовый', 'оранжевый', 'коричневый', 'бежевый', 'сиреневый']
             found_colors = [color for color in colors if color in message_lower]
             if found_colors:
                 entities['colors'] = found_colors
         
         # Извлечение размеров
         if 'size' in entity_types:
-            sizes = ['xs', 's', 'm', 'l', 'xl', 'xxl']
+            sizes = ['xs', 's', 'm', 'l', 'xl', 'xxl', 'xxs', 'xxxl']
             found_sizes = [size for size in sizes if size in message_lower]
             if found_sizes:
                 entities['sizes'] = found_sizes
+        
+        # Извлечение брендов
+        if 'brand' in entity_types:
+            brands = ['adidas', 'nike', 'puma', 'reebok', 'converse', 'vans', 'tommy hilfiger', 
+                     'calvin klein', 'levis', 'wrangler', 'boss', 'dickies', 'tom tailor', 
+                     'finn flare', 'sela']
+            found_brands = [brand for brand in brands if brand in message_lower]
+            if found_brands:
+                entities['brands'] = found_brands
         
         return entities 
