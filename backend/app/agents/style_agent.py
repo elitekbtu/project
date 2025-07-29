@@ -921,10 +921,10 @@ class StyleAgent(BaseAgent):
                 max_tokens=500
             )
             answer = response.choices[0].message.content.strip()
-                    return {"reply": answer, "items": []}
-    except Exception as e:
-        logger.error(f"StyleAgent Azure OpenAI error (small talk): {e}")
-        return {"reply": "Привет! 👋 Я ваш ИИ-стилист и готов помочь найти идеальный образ! 😊 Что вас интересует сегодня? Может быть, новые футболки, стильные джинсы или что-то для особого случая?", "items": []}
+            return {"reply": answer, "items": []}
+        except Exception as e:
+            logger.error(f"StyleAgent Azure OpenAI error (small talk): {e}")
+            return {"reply": "Привет! 👋 Я ваш ИИ-стилист и готов помочь найти идеальный образ! 😊 Что вас интересует сегодня? Может быть, новые футболки, стильные джинсы или что-то для особого случая?", "items": []}
 
     def _create_style_recommendation(self, items: List[Item], occasion: str, recommended_categories: List[str], user_message: str, user_profile: ProfileOut = None) -> str:
         """Создает стилевые рекомендации для конкретного повода"""
@@ -1135,7 +1135,6 @@ class StyleAgent(BaseAgent):
                     "style_occasion": occasion,
                     "recommended_categories": recommended_categories
                 }
-                            seen_ids.add(item.id)
             
             # Создаем живой ответ с помощью AI
             reply = await self._create_ai_response(search_results, user_message, market_insights, preferences)
