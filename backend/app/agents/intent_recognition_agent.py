@@ -109,11 +109,16 @@ class IntentRecognitionAgent(BaseAgent):
                 patterns=[
                     r"стиль", r"мода", r"тренд", r"модно", r"стильно", r"сочетание",
                     r"образ", r"лук", r"комплект", r"ансамбль", r"гардероб", r"стилист",
-                    r"style", r"fashion", r"trend", r"outfit", r"look", r"совет"
+                    r"style", r"fashion", r"trend", r"outfit", r"look", r"совет",
+                    r"собери", r"собрать", r"подбери", r"подобрать", r"создай", r"создать",
+                    r"школ", r"университет", r"колледж", r"работа", r"офис", r"деловой",
+                    r"вечеринк", r"праздник", r"торжество", r"свадьб", r"день рождения",
+                    r"повседневн", r"каждодневн", r"обычн", r"классик", r"элегантн",
+                    r"спорт", r"фитнес", r"тренировк", r"прогулк", r"отдых", r"отпуск"
                 ],
-                confidence=0.75,
-                context_hints=["стиль", "мода", "советы"],
-                entities=["style_type", "occasion"]
+                confidence=0.85,
+                context_hints=["стиль", "мода", "советы", "образ"],
+                entities=["style_type", "occasion", "lifestyle"]
             ),
             
             # Жалобы
@@ -221,6 +226,32 @@ class IntentRecognitionAgent(BaseAgent):
                 confidence=0.9,
                 entities=self._extract_entities(message, ["product_type", "price_range", "color", "size", "brand"]),
                 context_hints=["покупка", "выбор", "поиск"]
+            )
+        
+        # Специальная обработка для стилевых запросов типа "собери образ на школу"
+        if any(word in message_lower for word in ["собери", "собрать", "подбери", "подобрать", "создай", "создать", "образ", "лук", "комплект"]) and \
+           any(word in message_lower for word in ["школ", "университет", "колледж", "работа", "работы", "офис", "деловой", "бизнес",
+                                                 "вечеринк", "праздник", "торжество", "свадьб", "день рождения",
+                                                 "повседневн", "каждодневн", "обычн", "классик", "элегантн",
+                                                 "спорт", "фитнес", "тренировк", "прогулк", "отдых", "отпуск"]):
+            return IntentResult(
+                intent=IntentType.STYLE_ADVICE,
+                confidence=0.95,
+                entities=self._extract_entities(message, ["style_type", "occasion", "lifestyle"]),
+                context_hints=["стиль", "мода", "советы", "образ"]
+            )
+        
+        # Специальная обработка для коротких уточнений типа "для школы", "школы"
+        if len(message_lower.strip()) <= 20 and \
+           any(word in message_lower for word in ["школ", "университет", "колледж", "работа", "работы", "офис", "деловой", "бизнес",
+                                                 "вечеринк", "праздник", "торжество", "свадьб", "день рождения",
+                                                 "повседневн", "каждодневн", "обычн", "классик", "элегантн",
+                                                 "спорт", "фитнес", "тренировк", "прогулк", "отдых", "отпуск"]):
+            return IntentResult(
+                intent=IntentType.STYLE_ADVICE,
+                confidence=0.85,
+                entities=self._extract_entities(message, ["style_type", "occasion", "lifestyle"]),
+                context_hints=["стиль", "мода", "советы", "образ", "уточнение"]
             )
         
         for pattern in self.intent_patterns:
@@ -477,5 +508,27 @@ class IntentRecognitionAgent(BaseAgent):
             found_brands = [brand for brand in brands if brand in message_lower]
             if found_brands:
                 entities['brands'] = found_brands
+        
+        # Извлечение стилевых предпочтений и поводов
+        if 'style_type' in entity_types or 'occasion' in entity_types or 'lifestyle' in entity_types:
+            style_occasions = {
+                'школ': 'школа', 'университет': 'университет', 'колледж': 'колледж',
+                'работа': 'работа', 'работы': 'работа', 'офис': 'офис', 'деловой': 'деловой стиль', 'бизнес': 'деловой стиль',
+                'вечеринк': 'вечеринка', 'праздник': 'праздник', 'торжество': 'торжество',
+                'свадьб': 'свадьба', 'день рождения': 'день рождения',
+                'повседневн': 'повседневный', 'каждодневн': 'повседневный', 'обычн': 'повседневный',
+                'классик': 'классический', 'элегантн': 'элегантный',
+                'спорт': 'спортивный', 'фитнес': 'спортивный', 'тренировк': 'спортивный',
+                'прогулк': 'прогулка', 'отдых': 'отдых', 'отпуск': 'отпуск'
+            }
+            
+            found_occasions = []
+            for pattern, occasion in style_occasions.items():
+                if pattern in message_lower:
+                    found_occasions.append(occasion)
+            
+            if found_occasions:
+                entities['occasions'] = found_occasions
+                entities['style_type'] = found_occasions[0]  # Основной повод
         
         return entities 
