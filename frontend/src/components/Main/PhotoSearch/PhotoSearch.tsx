@@ -16,9 +16,24 @@ const PhotoSearch = () => {
     setPhoto(url)
     if (file) {
       setLoading(true)
-      const items = await searchByPhoto(file, user)
-      setResults(items)
-      setLoading(false)
+      try {
+        // Extract user profile data for the API
+        const userProfile = user ? {
+          height: user.height,
+          weight: user.weight,
+          chest: user.chest,
+          waist: user.waist,
+          hips: user.hips
+        } : undefined
+        
+        const items = await searchByPhoto(file, userProfile)
+        setResults(items)
+      } catch (error) {
+        console.error('Error searching by photo:', error)
+        setResults([])
+      } finally {
+        setLoading(false)
+      }
     }
   }
 

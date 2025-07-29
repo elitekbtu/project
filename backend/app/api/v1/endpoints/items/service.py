@@ -155,6 +155,8 @@ def list_items(db: Session, filters: dict, skip: int = 0, limit: int = 100, user
         )
     if category := filters.get("category"):
         query = query.filter(Item.category == category)
+    if color := filters.get("color"):
+        query = query.filter(Item.color.ilike(f"%{color}%"))
     if style := filters.get("style"):
         query = query.filter(Item.style.ilike(f"%{style}%"))
     if collection := filters.get("collection"):
@@ -214,6 +216,8 @@ def get_items_count(db: Session, filters: dict, current_user: Optional[User] = N
         )
     if category := filters.get("category"):
         query = query.filter(Item.category.ilike(f"%{category}%"))
+    if color := filters.get("color"):
+        query = query.filter(Item.color.ilike(f"%{color}%"))
     if style := filters.get("style"):
         query = query.filter(Item.style.ilike(f"%{style}%"))
     if collection := filters.get("collection"):

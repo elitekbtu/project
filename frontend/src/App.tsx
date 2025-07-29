@@ -31,6 +31,7 @@ const ItemsAdmin = lazy(() => import('./components/Admin/ItemsAdmin'))
 const OutfitsAdmin = lazy(() => import('./components/Admin/OutfitsAdmin'))
 const ModeratorAnalytics = lazy(() => import('./components/Admin/ModeratorAnalytics'))
 const SystemAnalytics = lazy(() => import('./components/Admin/SystemAnalytics'))
+const ChatStylistAdmin = lazy(() => import('./components/Admin/ChatStylistAdmin'))
 const UserForm = lazy(() => import('./components/Admin/UserForm'))
 const ItemForm = lazy(() => import('./components/Admin/ItemForm'))
 const OutfitForm = lazy(() => import('./components/Admin/OutfitForm'))
@@ -132,6 +133,7 @@ function AppContent() {
                   <Route path="/admin/outfits/:id/edit" element={<RequireAdmin><OutfitForm /></RequireAdmin>} />
                   <Route path="/admin/analytics" element={<ModeratorAnalytics />} />
                   <Route path="/admin/system" element={<RequireAdmin><SystemAnalytics /></RequireAdmin>} />
+                  <Route path="/admin/chat-stylist" element={<RequireAdmin><ChatStylistAdmin /></RequireAdmin>} />
                 </Route>
               </Route>
               {/* Fallback */}

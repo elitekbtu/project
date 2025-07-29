@@ -14,7 +14,12 @@ class Settings(BaseSettings):
 
     CELERY_BROKER_URL: str = Field("amqp://rabbitmq:5672//", env="CELERY_BROKER_URL")
 
-    OPENAI_API_KEY: str = Field("", env="OPENAI_API_KEY")
+    # Azure OpenAI Configuration
+    AZURE_OPENAI_API_KEY: str = Field("", env="AZURE_OPENAI_API_KEY")
+    AZURE_OPENAI_ENDPOINT: str = Field("", env="AZURE_OPENAI_ENDPOINT")
+    AZURE_OPENAI_API_VERSION: str = Field("2024-12-01-preview", env="AZURE_OPENAI_API_VERSION")
+    AZURE_OPENAI_DEPLOYMENT_NAME: str = Field("gpt-4o", env="AZURE_OPENAI_DEPLOYMENT_NAME")
+    AZURE_OPENAI_MODEL_NAME: str = Field("gpt-4o", env="AZURE_OPENAI_MODEL_NAME")
 
     ADMIN_EMAILS: str = Field("", env="ADMIN_EMAILS")
     ADMIN_DEFAULT_PASSWORD: str = Field("", env="ADMIN_DEFAULT_PASSWORD")
@@ -50,6 +55,20 @@ class Settings(BaseSettings):
                 "Insecure default DATABASE_URL detected. "
                 "Please set a secure DATABASE_URL environment variable in your .env file."
             )
+        return v
+
+    @validator("AZURE_OPENAI_ENDPOINT")
+    def _validate_azure_endpoint(cls, v: str) -> str:
+        """Validate Azure OpenAI endpoint format."""
+        if v and not v.startswith("https://"):
+            raise ValueError("Azure OpenAI endpoint must start with https://")
+        return v
+
+    @validator("AZURE_OPENAI_API_KEY")
+    def _validate_azure_api_key(cls, v: str) -> str:
+        """Validate Azure OpenAI API key is not empty if endpoint is provided."""
+        if v and len(v.strip()) < 10:
+            raise ValueError("Azure OpenAI API key seems too short")
         return v
 
 

@@ -1,0 +1,1 @@
+import{j as t}from"./ui-DmaJfU4R.js";import{c as s}from"./utils-CytzSlOG.js";import{r as a}from"./router-YsGj19cs.js";const m=a.forwardRef(({className:r,...e},o)=>t.jsx("div",{ref:o,className:s("animate-pulse rounded-md bg-muted",r),...e}));m.displayName="Skeleton";export{m as S};

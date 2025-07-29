@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TRC — Современная мода, стиль, одежда, тренды</title>
+    <meta name="description" content="TRC — современная платформа для моды и стиля. Одежда, тренды, образы, покупки онлайн. Уникальные коллекции, советы стилистов, история заказов, избранное и многое другое." />
+    <meta name="keywords" content="мода, стиль, одежда, тренды, покупки, образы, коллекции, стилист, онлайн магазин, TRC" />
+    <!-- Open Graph -->
+    <meta property="og:title" content="TRC — Современная мода и стиль" />
+    <meta property="og:description" content="Современная платформа для моды и стиля. Одежда, тренды, образы, покупки онлайн." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://your-domain.ru/" />
+    <meta property="og:image" content="/logo.png" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="TRC — Современная мода и стиль" />
+    <meta name="twitter:description" content="Современная платформа для моды и стиля. Одежда, тренды, образы, покупки онлайн." />
+    <meta name="twitter:image" content="/logo.png" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#000000" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="TRC" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167x167.png" />
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#000000" />
+    <meta name="msapplication-TileImage" content="/logo.png" />
+    
+    <!-- Fonts: preconnect + display=swap + preload -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    </noscript>
+    <script type="module" crossorigin src="/assets/index-8jId_CL5.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-BtP0CW_r.js">
+    <link rel="modulepreload" crossorigin href="/assets/router-YsGj19cs.js">
+    <link rel="modulepreload" crossorigin href="/assets/ui-DmaJfU4R.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-gnCIKTNK.css">
+  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+  <body>
+    <div id="root"></div>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KPN11Z30WN"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-KPN11Z30WN');
+    </script>
+
+    <!-- PWA Installation Script -->
+    <script defer src="/registerSW.js"></script>
+    <script>
+      // Инициализация PWA
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+            })
+            .catch(function(registrationError) {
+            });
+        });
+      }
+
+      // Обработчик события beforeinstallprompt
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Показываем кнопку установки, если она есть
+        const installButton = document.getElementById('install-button');
+        if (installButton) {
+          installButton.style.display = 'block';
+        }
+      });
+
+      // Обработчик успешной установки
+      window.addEventListener('appinstalled', () => {
+        deferredPrompt = null;
+        
+        // Скрываем кнопку установки
+        const installButton = document.getElementById('install-button');
+        if (installButton) {
+          installButton.style.display = 'none';
+        }
+      });
+
+      // Глобальная функция для показа prompt установки
+      window.showInstallPrompt = function() {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+            } else {
+            }
+            deferredPrompt = null;
+          });
+        }
+      };
+    </script>
+
+  </body>
+</html>

@@ -2,7 +2,7 @@
 """
 AI Description Enhancement Agent
 
-Агент для умной обработки и дополнения данных товаров через OpenAI API:
+Агент для умной обработки и дополнения данных товаров через Azure OpenAI API:
 - Анализ и улучшение описаний товаров
 - Дополнение недостающих полей по схеме Item
 - Классификация товаров по категориям и стилям
@@ -17,8 +17,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any, Union
 from datetime import datetime
 
-import openai
-from openai import AsyncOpenAI
+from openai import AsyncAzureOpenAI
 
 from app.core.config import get_settings
 
@@ -91,17 +90,21 @@ class DescriptionAgent:
         }
     
     def _initialize_client(self):
-        """Инициализация OpenAI клиента"""
+        """Инициализация Azure OpenAI клиента"""
         try:
-            if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY.strip():
-                openai.api_key = settings.OPENAI_API_KEY
-                self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-                logger.info("OpenAI клиент успешно инициализирован")
+            if (settings.AZURE_OPENAI_API_KEY and settings.AZURE_OPENAI_API_KEY.strip() and 
+                settings.AZURE_OPENAI_ENDPOINT and settings.AZURE_OPENAI_ENDPOINT.strip()):
+                self.client = AsyncAzureOpenAI(
+                    api_version=settings.AZURE_OPENAI_API_VERSION,
+                    azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
+                    api_key=settings.AZURE_OPENAI_API_KEY,
+                )
+                logger.info("Azure OpenAI клиент успешно инициализирован")
             else:
-                logger.warning("OPENAI_API_KEY не найден. AI функции отключены.")
+                logger.warning("Azure OpenAI параметры не найдены. AI функции отключены.")
                 self.client = None
         except Exception as e:
-            logger.error(f"Ошибка инициализации OpenAI клиента: {e}")
+            logger.error(f"Ошибка инициализации Azure OpenAI клиента: {e}")
             self.client = None
     
     async def enhance_product_data(self, raw_data: Dict[str, Any]) -> EnhanceResult:
@@ -167,16 +170,16 @@ class DescriptionAgent:
         return result
     
     async def _enhance_with_ai(self, result: EnhanceResult, raw_data: Dict[str, Any]) -> EnhanceResult:
-        """Улучшение данных через OpenAI API"""
+        """Улучшение данных через Azure OpenAI API"""
         try:
             self.stats['ai_requests'] += 1
             
             # Создаем промпт для анализа товара
             prompt = self._create_analysis_prompt(result, raw_data)
             
-            # Запрос к OpenAI
+            # Запрос к Azure OpenAI
             response = await self.client.chat.completions.create(
-                model="gpt-3.5-turbo-1106",  # Модель поддерживающая JSON response format
+                model=settings.AZURE_OPENAI_DEPLOYMENT_NAME,
                 messages=[
                     {
                         "role": "system", 
@@ -196,10 +199,10 @@ class DescriptionAgent:
             ai_data = json.loads(response.choices[0].message.content)
             result = self._apply_ai_enhancements(result, ai_data)
             
-            logger.info(f"AI обработка завершена для: {result.name}")
+            logger.info(f"Azure OpenAI обработка завершена для: {result.name}")
             
         except Exception as e:
-            logger.error(f"Ошибка AI обработки: {e}")
+            logger.error(f"Ошибка Azure OpenAI обработки: {e}")
             # Продолжаем без AI
             
         return result
